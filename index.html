@@ -1,0 +1,1512 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KYT 风险入金配置</title>
+  <style>
+    :root {
+      --bg: #09111c;
+      --panel: #101a28;
+      --panel-soft: #162235;
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #eef5ff;
+      --muted: #8ea4c1;
+      --primary: #56a7ff;
+      --serious: #ff5d6c;
+      --high: #ff914d;
+      --medium: #f3c75a;
+      --low: #2ed3a1;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      --font-display: "STZhongsong", "Microsoft YaHei", sans-serif;
+      --font-body: "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-body);
+      background:
+        radial-gradient(circle at top left, rgba(86, 167, 255, 0.18), transparent 26%),
+        radial-gradient(circle at 86% 8%, rgba(255, 145, 77, 0.14), transparent 24%),
+        linear-gradient(180deg, #07101a 0%, #09111c 45%, #08111a 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(180deg, rgba(255,255,255,0.7), transparent 90%);
+    }
+
+    .app-shell {
+      width: min(1480px, calc(100vw - 40px));
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      height: calc(100vh - 40px);
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.96), rgba(9, 17, 28, 0.96));
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(86, 167, 255, 0.12);
+      color: #a6cdff;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .sidebar h1 {
+      margin: 16px 0 10px;
+      font-family: var(--font-display);
+      font-size: 28px;
+      line-height: 1.35;
+    }
+
+    .sidebar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      padding: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      border-color: rgba(86, 167, 255, 0.52);
+      background: linear-gradient(135deg, rgba(86, 167, 255, 0.2), rgba(19, 29, 42, 0.92));
+      transform: translateY(-1px);
+    }
+
+    .nav-btn strong,
+    .nav-btn span { display: block; }
+    .nav-btn strong { font-size: 17px; margin-bottom: 8px; }
+    .nav-btn span { font-size: 12px; color: var(--muted); line-height: 1.7; }
+    .nav-btn.active span { color: #dceaff; }
+
+    .side-note {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .content {
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    .hero,
+    .overview-bar,
+    .section-card {
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.96), rgba(10, 18, 30, 0.96));
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -50px;
+      top: -30px;
+      width: 200px;
+      height: 200px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(86, 167, 255, 0.18), transparent 72%);
+    }
+
+    .hero h2 {
+      position: relative;
+      z-index: 1;
+      margin: 12px 0 10px;
+      font-family: var(--font-display);
+      font-size: 34px;
+      line-height: 1.35;
+    }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      max-width: 880px;
+      margin: 0;
+      color: #d0dceb;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    .hero-strip {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .hero-item {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .hero-item small { display: block; color: var(--muted); margin-bottom: 8px; }
+    .hero-item strong { display: block; font-size: 22px; }
+    .hero-item span { display: block; margin-top: 6px; color: #dbe7f3; font-size: 12px; }
+
+    .overview-bar {
+      position: sticky;
+      top: 20px;
+      z-index: 8;
+      padding: 18px 20px;
+    }
+
+    .overview-bar__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .overview-bar__head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .overview-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .overview-card small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .overview-card strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .overview-card span {
+      display: block;
+      margin-top: 6px;
+      color: #dbe7f3;
+      font-size: 12px;
+    }
+
+    .page {
+      display: none;
+      gap: 20px;
+    }
+
+    .page.active { display: grid; }
+
+    .section-card { padding: 24px; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .section-head h3 { margin: 0; font-size: 22px; }
+    .section-head p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; max-width: 880px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(86, 167, 255, 0.12);
+      color: #abd0ff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .button {
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(86, 167, 255, 0.28);
+      background: rgba(86, 167, 255, 0.12);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .button.secondary {
+      border-color: rgba(148, 163, 184, 0.18);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .summary-grid,
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card,
+    .snapshot-card,
+    .detail-card,
+    .log-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .summary-card small,
+    .snapshot-card small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    .summary-card strong,
+    .snapshot-card strong {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .summary-card span,
+    .snapshot-card span { color: #d8e6f3; font-size: 12px; line-height: 1.7; }
+
+    .risk-table-wrap,
+    .record-table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    th { color: #d4e6ff; background: rgba(86, 167, 255, 0.08); }
+    tr:last-child td { border-bottom: 0; }
+
+    .risk-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .risk-tag::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .serious { color: var(--serious); background: rgba(255, 93, 108, 0.12); }
+    .high { color: var(--high); background: rgba(255, 145, 77, 0.12); }
+    .medium { color: var(--medium); background: rgba(243, 199, 90, 0.14); }
+    .low { color: var(--low); background: rgba(46, 211, 161, 0.14); }
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1.18fr 0.82fr;
+      gap: 18px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input,
+    .field select {
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+    }
+
+    .record-row {
+      cursor: pointer;
+      transition: background 0.16s ease;
+    }
+
+    .record-row:hover,
+    .record-row.active {
+      background: rgba(86, 167, 255, 0.08);
+    }
+
+    .desc-list { display: grid; gap: 10px; margin-top: 14px; }
+    .desc-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.12);
+      font-size: 13px;
+    }
+    .desc-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .desc-item span:first-child { color: var(--muted); }
+
+    .log-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .config-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 10, 16, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 40;
+    }
+
+    .config-modal.active {
+      display: flex;
+    }
+
+    .config-modal__panel {
+      width: min(760px, calc(100vw - 24px));
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(86, 167, 255, 0.22);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .config-modal__head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .config-modal__head h4 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .config-modal__head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .modal-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal-form__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .modal-field input,
+    .modal-field select {
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+    }
+
+    .modal-field--full {
+      grid-column: 1 / -1;
+    }
+
+    .modal-inline {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .record-detail-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 10, 16, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 41;
+    }
+
+    .record-detail-modal.active {
+      display: flex;
+    }
+
+    .record-detail-modal__panel {
+      width: min(820px, calc(100vw - 24px));
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(86, 167, 255, 0.22);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .log-card h4,
+    .detail-card h4,
+    .snapshot-card h4 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .log-card p,
+    .detail-card p,
+    .snapshot-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+      margin-top: 16px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .page-chip {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .spec-sidebar {
+      position: fixed;
+      top: 24px;
+      right: 20px;
+      width: 320px;
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      padding: 18px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+      z-index: 30;
+    }
+
+    .spec-sidebar h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .spec-page {
+      display: none;
+      gap: 12px;
+    }
+
+    .spec-page.active {
+      display: grid;
+    }
+
+    .spec-card {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .spec-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .spec-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .page-chip[disabled] {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 1360px) {
+      .app-shell,
+      .split-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+      .hero-strip,
+      .overview-grid,
+      .summary-grid,
+      .snapshot-grid,
+      .field-grid,
+      .modal-form__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app-shell {
+        width: calc(100vw - 20px);
+        margin: 10px auto;
+      }
+      .hero,
+      .section-card,
+      .sidebar { padding: 18px; }
+      .hero-strip,
+      .overview-grid,
+      .summary-grid,
+      .snapshot-grid,
+      .field-grid,
+      .modal-form__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .spec-sidebar {
+        position: static;
+        width: auto;
+        max-height: none;
+        margin-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <h1>KYT 风险入金配置</h1>
+
+      <div class="nav-list">
+        <button class="nav-btn active" data-page="kyt-config">
+          <strong>KYT 风险列表图</strong>
+        </button>
+        <button class="nav-btn" data-page="deposit-records">
+          <strong>KYT 充值记录</strong>
+        </button>
+        <button class="nav-btn" data-page="change-logs">
+          <strong>配置变更记录</strong>
+        </button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <h2>KYT 风险入金配置</h2>
+      </section>
+
+      <section class="overview-bar">
+        <div class="overview-bar__head">
+          <h3>数据概览</h3>
+          <div class="button-group">
+            <select id="filter-granularity" class="button secondary">
+              <option value="day" selected>日</option>
+              <option value="week">周</option>
+              <option value="month">月</option>
+              <option value="total">总</option>
+            </select>
+          </div>
+        </div>
+        <div class="overview-grid">
+          <div class="overview-card">
+            <small>严重风险</small>
+            <strong style="color: var(--serious);">18</strong>
+            <span>折合金额 29,600 U</span>
+          </div>
+          <div class="overview-card">
+            <small>高风险</small>
+            <strong style="color: var(--high);">42</strong>
+            <span>折合金额 68,400 U</span>
+          </div>
+          <div class="overview-card">
+            <small>中风险</small>
+            <strong style="color: var(--medium);">57</strong>
+            <span>折合金额 74,900 U</span>
+          </div>
+          <div class="overview-card">
+            <small>低风险</small>
+            <strong style="color: var(--low);">126</strong>
+            <span>折合金额 196,300 U</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="kyt-config" class="page active">
+        <div class="section-card">
+          <div class="section-head">
+            <div><h3>KYT 风险列表图</h3></div>
+          </div>
+
+          <div class="risk-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>风险等级</th>
+                  <th>最低分</th>
+                  <th>最高分</th>
+                  <th>入金控制</th>
+                  <th>折扣比例</th>
+                  <th>归集地址</th>
+                  <th>配置</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="risk-tag serious">严重风险</span></td>
+                  <td><span data-policy="serious" data-field="min-score">90</span></td>
+                  <td><span data-policy="serious" data-field="max-score">100</span></td>
+                  <td><span data-policy="serious" data-field="control-label">拒绝充值入金</span></td>
+                  <td><span data-policy="serious" data-field="discount-label">--</span></td>
+                  <td><span data-policy="serious" data-field="address">--</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="serious">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag high">高风险</span></td>
+                  <td><span data-policy="high" data-field="min-score">75</span></td>
+                  <td><span data-policy="high" data-field="max-score">89</span></td>
+                  <td><span data-policy="high" data-field="control-label">按折扣入金</span></td>
+                  <td><span data-policy="high" data-field="discount-label">70%</span></td>
+                  <td><span data-policy="high" data-field="address">TQ8A-78XH-91KR-HR01</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="high">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag medium">中风险</span></td>
+                  <td><span data-policy="medium" data-field="min-score">55</span></td>
+                  <td><span data-policy="medium" data-field="max-score">74</span></td>
+                  <td><span data-policy="medium" data-field="control-label">按折扣入金</span></td>
+                  <td><span data-policy="medium" data-field="discount-label">88%</span></td>
+                  <td><span data-policy="medium" data-field="address">TQ8A-78XH-91KR-MD88</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="medium">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag low">低风险</span></td>
+                  <td><span data-policy="low" data-field="min-score">0</span></td>
+                  <td><span data-policy="low" data-field="max-score">54</span></td>
+                  <td><span data-policy="low" data-field="control-label">直接入金</span></td>
+                  <td><span data-policy="low" data-field="discount-label">100%</span></td>
+                  <td><span data-policy="low" data-field="address">TQ8A-78XH-91KR-LW00</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="low">配置</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="deposit-records" class="page">
+        <div class="section-card">
+          <div class="section-head">
+            <div><h3>KYT 充值记录</h3></div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>用户 ID</label>
+              <input id="filter-user" type="text" placeholder="输入用户 ID" />
+            </div>
+            <div class="field">
+              <label>订单号</label>
+              <input id="filter-order" type="text" placeholder="输入订单号" />
+            </div>
+            <div class="field">
+              <label>风险等级</label>
+              <select id="filter-risk">
+                <option value="">全部</option>
+                <option value="serious">严重风险</option>
+                <option value="high">高风险</option>
+                <option value="medium">中风险</option>
+                <option value="low">低风险</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>币种</label>
+              <select id="filter-coin">
+                <option value="">全部</option>
+                <option value="USDT">USDT</option>
+                <option value="BTC">BTC</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>开始时间</label>
+              <input id="filter-updated-start" type="datetime-local" step="1" />
+            </div>
+            <div class="field">
+              <label>结束时间</label>
+              <input id="filter-updated-end" type="datetime-local" step="1" />
+            </div>
+            <div class="field">
+              <label>操作</label>
+              <div class="button-group">
+                <button class="button" id="apply-filter">应用</button>
+                <button class="button secondary" id="reset-filter">重置</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="record-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>订单号</th>
+                  <th>用户 ID</th>
+                  <th>风险等级</th>
+                  <th>相关原因</th>
+                  <th>风险分数</th>
+                  <th>最后更新时间</th>
+                  <th>原始入金金额</th>
+                  <th>入金控制</th>
+                  <th>到账金额</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="record-tbody"></tbody>
+            </table>
+          </div>
+          <div class="footer-note" id="record-summary">当前展示 0 笔 KYT 充值记录</div>
+          <div class="pagination">
+            <button class="page-chip" id="prev-page" type="button">上一页</button>
+            <div id="page-summary">第 1 页 / 共 1 页</div>
+            <button class="page-chip" id="next-page" type="button">下一页</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="change-logs" class="page">
+        <div class="section-card">
+          <div class="section-head">
+            <div><h3>当前配置快照</h3></div>
+          </div>
+          <div class="snapshot-grid">
+            <div class="snapshot-card">
+              <small>严重风险</small>
+              <strong style="color: var(--serious);"><span data-policy="serious" data-field="snapshot-range">90 - 100</span></strong>
+              <span>入金控制：<span data-policy="serious" data-field="snapshot-control">拒绝充值入金</span><br />折扣比例：<span data-policy="serious" data-field="snapshot-discount">--</span><br />归集地址：<span data-policy="serious" data-field="snapshot-address">--</span></span>
+            </div>
+            <div class="snapshot-card">
+              <small>高风险</small>
+              <strong style="color: var(--high);"><span data-policy="high" data-field="snapshot-range">75 - 89</span></strong>
+              <span>入金控制：<span data-policy="high" data-field="snapshot-control">按折扣入金</span><br />折扣比例：<span data-policy="high" data-field="snapshot-discount">70%</span><br />归集地址：<span data-policy="high" data-field="snapshot-address">TQ8A-78XH-91KR-HR01</span></span>
+            </div>
+            <div class="snapshot-card">
+              <small>中风险</small>
+              <strong style="color: var(--medium);"><span data-policy="medium" data-field="snapshot-range">55 - 74</span></strong>
+              <span>入金控制：<span data-policy="medium" data-field="snapshot-control">按折扣入金</span><br />折扣比例：<span data-policy="medium" data-field="snapshot-discount">88%</span><br />归集地址：<span data-policy="medium" data-field="snapshot-address">TQ8A-78XH-91KR-MD88</span></span>
+            </div>
+            <div class="snapshot-card">
+              <small>低风险</small>
+              <strong style="color: var(--low);"><span data-policy="low" data-field="snapshot-range">0 - 54</span></strong>
+              <span>入金控制：<span data-policy="low" data-field="snapshot-control">直接入金</span><br />折扣比例：<span data-policy="low" data-field="snapshot-discount">100%</span><br />归集地址：<span data-policy="low" data-field="snapshot-address">TQ8A-78XH-91KR-LW00</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-head">
+            <div><h3>配置变更记录</h3></div>
+          </div>
+          <div class="log-list">
+            <div class="log-card">
+              <h4>2026-06-12 09:20  高风险折扣比例变更</h4>
+              <p>操作人：风控主管 A。变更字段：高风险折扣比例。变更前：75%。变更后：70%。备注：近期高风险样本回测偏高，下调到账比例。</p>
+            </div>
+            <div class="log-card">
+              <h4>2026-06-12 09:36  中风险归集地址切换</h4>
+              <p>操作人：资金运营 B。变更字段：中风险归集地址。变更前：TQ8A-78XH-91KR-MD07。变更后：TQ8A-78XH-91KR-MD88。备注：启用新地址。</p>
+            </div>
+            <div class="log-card">
+              <h4>2026-06-12 10:05  严重风险阈值调整</h4>
+              <p>操作人：风控主管 A。变更字段：严重风险分数区间。变更前：92 - 100。变更后：90 - 100。备注：扩大量化拦截范围。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside class="spec-sidebar">
+    <h3>口径说明</h3>
+    <div class="spec-page active" data-spec-page="kyt-config">
+      <div class="spec-card">
+        <strong>折合金额(U)</strong>
+        <span>数据概览中的金额统一展示为折合 U 金额。充值币种为 USDT 时按 1:1 折合；充值币种为其他币种时，按该笔充值发生时间对应的现货 USDT 币对成交价折合为 U。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险等级</strong>
+        <span>固定为严重风险、高风险、中风险、低风险四档，按最低分与最高分区间命中。</span>
+      </div>
+      <div class="spec-card">
+        <strong>入金控制</strong>
+        <span>控制方式仅有拒绝充值入金、按折扣入金、直接入金三种。</span>
+      </div>
+      <div class="spec-card">
+        <strong>归集地址</strong>
+        <span>仅按折扣入金或直接入金时展示并填写归集地址，拒绝充值入金不展示归集地址。</span>
+      </div>
+    </div>
+    <div class="spec-page" data-spec-page="deposit-records">
+      <div class="spec-card">
+        <strong>记录范围</strong>
+        <span>KYT 充值记录展示全部风险等级充值记录，包含严重风险、高风险、中风险、低风险。</span>
+      </div>
+      <div class="spec-card">
+        <strong>折合方式</strong>
+        <span>记录涉及金额统计时，USDT 按 1:1 折合；其他币种按充值时间当时对应现货 USDT 币对价格折合。</span>
+      </div>
+      <div class="spec-card">
+        <strong>列表字段</strong>
+        <span>列表仅展示订单号、用户 ID、风险等级、相关原因、风险分数、最后更新时间、原始入金金额、入金控制、到账金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>筛选项</strong>
+        <span>筛选项包含用户 ID、订单号、风险等级、币种、开始时间、结束时间；统计维度放在顶部数据概览区域。</span>
+      </div>
+      <div class="spec-card">
+        <strong>详情弹窗</strong>
+        <span>查看详情弹窗展示充值 HASH、FROM 地址、收款地址以及各服务商返回的 KYT 分数与原因。</span>
+      </div>
+    </div>
+    <div class="spec-page" data-spec-page="change-logs">
+      <div class="spec-card">
+        <strong>配置快照</strong>
+        <span>当前配置快照展示四个风险等级的生效区间、入金控制、折扣比例与归集地址。</span>
+      </div>
+      <div class="spec-card">
+        <strong>变更日志</strong>
+        <span>变更日志记录最低分、最高分、入金控制、折扣比例、归集地址的变更前后值。</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="config-modal" id="config-modal">
+    <div class="config-modal__panel">
+      <div class="config-modal__head">
+        <div>
+          <h4 id="modal-title">风险等级配置</h4>
+          <p id="modal-desc">当前为配置弹窗，修改后点击确认，仅在当前页演示配置结果。</p>
+        </div>
+      </div>
+      <div class="modal-form">
+        <div class="modal-form__grid">
+          <div class="modal-field">
+            <label for="modal-min-score">最低分</label>
+            <input id="modal-min-score" type="number" />
+          </div>
+          <div class="modal-field">
+            <label for="modal-max-score">最高分</label>
+            <input id="modal-max-score" type="number" />
+          </div>
+          <div class="modal-field">
+            <label for="modal-control">入金控制</label>
+            <select id="modal-control">
+              <option value="direct" selected>直接入金</option>
+              <option value="discount">按折扣入金</option>
+              <option value="reject">拒绝充值入金</option>
+            </select>
+          </div>
+          <div class="modal-field" id="modal-discount-wrap">
+            <label for="modal-discount">折扣比例</label>
+            <input id="modal-discount" type="number" min="0" max="100" />
+          </div>
+          <div class="modal-field modal-field--full" id="modal-address-wrap">
+            <label for="modal-address">归集地址</label>
+            <input id="modal-address" type="text" />
+          </div>
+          <div class="modal-field modal-field--full">
+            <label for="modal-google-code">谷歌验证码</label>
+            <div class="modal-inline">
+              <input id="modal-google-code" type="text" placeholder="请输入谷歌验证码" />
+              <button type="button" class="button secondary" id="modal-google-btn">谷歌验证码</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="button secondary" id="modal-cancel">取消</button>
+        <button type="button" class="button" id="modal-confirm">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="record-detail-modal" id="record-detail-modal">
+    <div class="record-detail-modal__panel">
+      <div class="config-modal__head">
+        <div>
+          <h4>充值记录详情</h4>
+          <p>点击列表中的“查看详情”后，在当前页弹窗展示该笔 KYT 充值记录详情。</p>
+        </div>
+        <button type="button" class="button secondary" id="record-detail-close">关闭</button>
+      </div>
+      <div class="desc-list" id="record-detail-content"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const buttons = Array.from(document.querySelectorAll('.nav-btn'));
+      const pages = Array.from(document.querySelectorAll('.page'));
+      const specPages = Array.from(document.querySelectorAll('.spec-page'));
+      const configButtons = Array.from(document.querySelectorAll('.config-trigger'));
+      const tbody = document.getElementById('record-tbody');
+      const summary = document.getElementById('record-summary');
+      const filterUser = document.getElementById('filter-user');
+      const filterOrder = document.getElementById('filter-order');
+      const filterRisk = document.getElementById('filter-risk');
+      const filterCoin = document.getElementById('filter-coin');
+      const filterGranularity = document.getElementById('filter-granularity');
+      const filterUpdatedStart = document.getElementById('filter-updated-start');
+      const filterUpdatedEnd = document.getElementById('filter-updated-end');
+      const applyBtn = document.getElementById('apply-filter');
+      const resetBtn = document.getElementById('reset-filter');
+      const prevPageBtn = document.getElementById('prev-page');
+      const nextPageBtn = document.getElementById('next-page');
+      const pageSummary = document.getElementById('page-summary');
+      const modal = document.getElementById('config-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalMinScore = document.getElementById('modal-min-score');
+      const modalMaxScore = document.getElementById('modal-max-score');
+      const modalControl = document.getElementById('modal-control');
+      const modalDiscount = document.getElementById('modal-discount');
+      const modalDiscountWrap = document.getElementById('modal-discount-wrap');
+      const modalAddress = document.getElementById('modal-address');
+      const modalAddressWrap = document.getElementById('modal-address-wrap');
+      const modalGoogleCode = document.getElementById('modal-google-code');
+      const modalGoogleBtn = document.getElementById('modal-google-btn');
+      const modalCancel = document.getElementById('modal-cancel');
+      const modalConfirm = document.getElementById('modal-confirm');
+      const recordDetailModal = document.getElementById('record-detail-modal');
+      const recordDetailContent = document.getElementById('record-detail-content');
+      const recordDetailClose = document.getElementById('record-detail-close');
+
+      const riskMap = {
+        serious: { label: '严重风险', className: 'serious' },
+        high: { label: '高风险', className: 'high' },
+        medium: { label: '中风险', className: 'medium' },
+        low: { label: '低风险', className: 'low' }
+      };
+
+      const policyMap = {
+        serious: {
+          title: '严重风险配置',
+          desc: '当前口径：命中严重风险后默认拒绝充值入金，不展示归集地址。',
+          minScore: 90,
+          maxScore: 100,
+          control: 'reject',
+          discountRate: '',
+          address: ''
+        },
+        high: {
+          title: '高风险配置',
+          desc: '当前口径：命中高风险后允许入金，可配置折扣比例。',
+          minScore: 75,
+          maxScore: 89,
+          control: 'discount',
+          discountRate: 70,
+          address: 'TQ8A-78XH-91KR-HR01'
+        },
+        medium: {
+          title: '中风险配置',
+          desc: '当前口径：命中中风险后允许入金，可配置折扣比例。',
+          minScore: 55,
+          maxScore: 74,
+          control: 'discount',
+          discountRate: 88,
+          address: 'TQ8A-78XH-91KR-MD88'
+        },
+        low: {
+          title: '低风险配置',
+          desc: '当前口径：命中低风险后允许入金，默认直接入金。',
+          minScore: 0,
+          maxScore: 54,
+          control: 'direct',
+          discountRate: 100,
+          address: 'TQ8A-78XH-91KR-LW00'
+        }
+      };
+
+      const records = [
+        { orderNo: 'DEP-20260612-0061', hash: '0x8e11ad781aa1d0b4f1903177aaf61061', userId: 'U100321', coin: 'USDT', riskLevel: 'serious', score: 95, sourceAmount: 12800, fromAddress: 'TJn4-9A11-8FC2-RS61', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:42:18', reason: '命中制裁地址关联，来源地址历史黑名单命中', providerResults: [{ name: 'Chainalysis', score: 96, reason: '制裁名单地址直接命中' }, { name: 'TRM', score: 94, reason: '来源地址历史黑名单命中' }, { name: 'AMLBot', score: 95, reason: '高危诈骗标签聚类命中' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0064', hash: '0x8e11ad781aa1d0b4f1903177aaf61064', userId: 'U100417', coin: 'USDT', riskLevel: 'high', score: 81, sourceAmount: 5000, fromAddress: 'TYh2-7B14-55HU-HR64', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:35:44', reason: '命中高风险跳板地址，近 7 天多次与异常地址交互', providerResults: [{ name: 'Chainalysis', score: 82, reason: '高风险跳板地址接触频繁' }, { name: 'TRM', score: 79, reason: '短周期异常交互次数偏高' }, { name: 'AMLBot', score: 81, reason: '来源链路命中高危路径' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 3500, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0068', hash: '0x8e11ad781aa1d0b4f1903177aaf61068', userId: 'U100566', coin: 'BTC', riskLevel: 'medium', score: 61, sourceAmount: 8600, fromAddress: 'bc1q-md68-kyt-5566', receiveAddress: 'bc1q-recv-main-001', updatedAt: '2026-06-12 10:31:09', reason: '命中中风险画像，来源地址活跃度异常但未触发拒绝条件', providerResults: [{ name: 'Chainalysis', score: 63, reason: '地址活跃度异常' }, { name: 'TRM', score: 59, reason: '资金路径存在灰度标签' }, { name: 'AMLBot', score: 61, reason: '间接接触高危服务商地址' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 7568, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0071', hash: '0x8e11ad781aa1d0b4f1903177aaf61071', userId: 'U100728', coin: 'USDT', riskLevel: 'high', score: 84, sourceAmount: 3200, fromAddress: 'TXm1-HR71-SEND-8001', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:26:51', reason: '命中高风险资金来源，地址路径复杂度偏高', providerResults: [{ name: 'Chainalysis', score: 85, reason: '高风险资金来源路径复杂' }, { name: 'TRM', score: 83, reason: '异常跳转节点较多' }, { name: 'AMLBot', score: 84, reason: '来源地址命中风险集群' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 2240, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0075', hash: '0x8e11ad781aa1d0b4f1903177aaf61075', userId: 'U100892', coin: 'USDT', riskLevel: 'medium', score: 58, sourceAmount: 1100, fromAddress: 'TRx8-MD75-SRC-1100', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:18:33', reason: '命中中风险来源地址，链路存在混币接触史', providerResults: [{ name: 'Chainalysis', score: 57, reason: '存在混币服务接触史' }, { name: 'TRM', score: 60, reason: '来源地址灰度标签命中' }, { name: 'AMLBot', score: 58, reason: '间接风险链路触发' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 968, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0078', hash: '0x8e11ad781aa1d0b4f1903177aaf61078', userId: 'U100901', coin: 'USDT', riskLevel: 'serious', score: 97, sourceAmount: 9200, fromAddress: 'TSer-78-HIT-BL97', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:11:07', reason: '命中严重风险名单，来源地址与诈骗地址直接关联', providerResults: [{ name: 'Chainalysis', score: 98, reason: '诈骗地址直接关联' }, { name: 'TRM', score: 97, reason: '高危诈骗实体命中' }, { name: 'AMLBot', score: 96, reason: '涉诈地址群组直接连接' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0082', hash: '0x8e11ad781aa1d0b4f1903177aaf61082', userId: 'U101026', coin: 'USDT', riskLevel: 'low', score: 18, sourceAmount: 9600, fromAddress: 'TLow-82-SRC-9600', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:58:42', reason: '低风险正常充值，未命中异常地址规则', providerResults: [{ name: 'Chainalysis', score: 18, reason: '未命中异常标签' }, { name: 'TRM', score: 16, reason: '来源地址正常' }, { name: 'AMLBot', score: 19, reason: 'KYT 检测通过' }], actionText: '直接入金', discountRate: 100, settledAmount: 9600, targetAddress: 'TQ8A-78XH-91KR-LW00', operable: true },
+        { orderNo: 'DEP-20260612-0088', hash: '0x8e11ad781aa1d0b4f1903177aaf61088', userId: 'U101312', coin: 'USDT', riskLevel: 'high', score: 77, sourceAmount: 6800, fromAddress: 'THi8-HR88-SRC-6800', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:46:25', reason: '命中高风险中转地址，短时分拆入账频繁', providerResults: [{ name: 'Chainalysis', score: 79, reason: '高风险中转地址命中' }, { name: 'TRM', score: 76, reason: '短时分拆交易频繁' }, { name: 'AMLBot', score: 77, reason: '资金流向存在可疑模式' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 4760, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0091', hash: '0x8e11ad781aa1d0b4f1903177aaf61091', userId: 'U101430', coin: 'BTC', riskLevel: 'medium', score: 63, sourceAmount: 4700, fromAddress: 'bc1q-md91-risk-430', receiveAddress: 'bc1q-recv-main-001', updatedAt: '2026-06-12 09:35:18', reason: '命中中风险交易对手画像，存在灰度风险标签', providerResults: [{ name: 'Chainalysis', score: 64, reason: '交易对手灰度画像命中' }, { name: 'TRM', score: 62, reason: '地址风险敞口偏高' }, { name: 'AMLBot', score: 63, reason: '来源节点存在中风险标签' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 4136, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0093', hash: '0x8e11ad781aa1d0b4f1903177aaf61093', userId: 'U101566', coin: 'USDT', riskLevel: 'medium', score: 66, sourceAmount: 2100, fromAddress: 'TMd9-93-FROM-2100', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:22:54', reason: '命中中风险策略，链路存在间接高危接触', providerResults: [{ name: 'Chainalysis', score: 67, reason: '间接高危接触' }, { name: 'TRM', score: 65, reason: '链路中存在可疑服务节点' }, { name: 'AMLBot', score: 66, reason: '风险路径交叉命中' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 1848, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0097', hash: '0x8e11ad781aa1d0b4f1903177aaf61097', userId: 'U101688', coin: 'USDT', riskLevel: 'serious', score: 93, sourceAmount: 7600, fromAddress: 'TSr9-97-BLK-7600', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:10:06', reason: '命中严重风险地址群组，历史涉诈标签明确', providerResults: [{ name: 'Chainalysis', score: 94, reason: '严重风险地址群组命中' }, { name: 'TRM', score: 92, reason: '历史涉诈标签明确' }, { name: 'AMLBot', score: 93, reason: '黑名单实体间接直连' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0101', hash: '0x8e11ad781aa1d0b4f1903177aaf61101', userId: 'U101824', coin: 'USDT', riskLevel: 'low', score: 12, sourceAmount: 3500, fromAddress: 'TLow-01-SAFE-3500', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 08:57:40', reason: '低风险正常充值，来源地址无异常标签', providerResults: [{ name: 'Chainalysis', score: 11, reason: '低风险正常地址' }, { name: 'TRM', score: 13, reason: '未命中高危标签' }, { name: 'AMLBot', score: 12, reason: 'KYT 结果正常' }], actionText: '直接入金', discountRate: 100, settledAmount: 3500, targetAddress: 'TQ8A-78XH-91KR-LW00', operable: true },
+        { orderNo: 'DEP-20260612-0104', hash: '0x8e11ad781aa1d0b4f1903177aaf61104', userId: 'U101903', coin: 'USDT', riskLevel: 'high', score: 79, sourceAmount: 4300, fromAddress: 'THr1-104-RISK-4300', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 08:46:12', reason: '命中高风险地址路径，资金来源分层复杂', providerResults: [{ name: 'Chainalysis', score: 80, reason: '资金来源分层复杂' }, { name: 'TRM', score: 78, reason: '高风险路径命中' }, { name: 'AMLBot', score: 79, reason: '异常上游资金来源' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 3010, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true }
+      ];
+
+      let activeRiskKey = '';
+      let currentPage = 1;
+      const pageSize = 10;
+
+      function getControlLabel(control) {
+        if (control === 'reject') return '拒绝充值入金';
+        if (control === 'discount') return '按折扣入金';
+        return '直接入金';
+      }
+
+      function getControlDesc(riskKey) {
+        const policy = policyMap[riskKey];
+        const label = getControlLabel(policy.control);
+        if (policy.control === 'reject') {
+          return '当前口径：命中' + riskMap[riskKey].label + '后拒绝充值入金，不展示归集地址。';
+        }
+        if (policy.control === 'discount') {
+          return '当前口径：命中' + riskMap[riskKey].label + '后允许入金，按 ' + policy.discountRate + '% 折扣到账。';
+        }
+        return '当前口径：命中' + riskMap[riskKey].label + '后允许入金，直接入金。';
+      }
+
+      function updateControlVisibility() {
+        const control = modalControl.value;
+        modalDiscountWrap.style.display = control === 'discount' ? 'flex' : 'none';
+        modalAddressWrap.style.display = control === 'reject' ? 'none' : 'flex';
+      }
+
+      function syncPolicyToPage(riskKey) {
+        const policy = policyMap[riskKey];
+        const controlLabel = getControlLabel(policy.control);
+        const discountLabel = policy.control === 'reject' ? '--' : String(policy.control === 'discount' ? policy.discountRate : 100) + '%';
+        const addressLabel = policy.control === 'reject' ? '--' : (policy.address || '--');
+        const snapshotRange = policy.minScore + ' - ' + policy.maxScore;
+
+        const fieldMap = {
+          'min-score': String(policy.minScore),
+          'max-score': String(policy.maxScore),
+          'control-label': controlLabel,
+          'discount-label': discountLabel,
+          address: addressLabel,
+          'snapshot-range': snapshotRange,
+          'snapshot-control': controlLabel,
+          'snapshot-discount': discountLabel,
+          'snapshot-address': addressLabel
+        };
+
+        Object.keys(fieldMap).forEach(function (field) {
+          const node = document.querySelector('[data-policy="' + riskKey + '"][data-field="' + field + '"]');
+          if (node) {
+            node.textContent = fieldMap[field];
+          }
+        });
+      }
+
+      function syncRecordsFromPolicy() {
+        records.forEach(function (record) {
+          const policy = policyMap[record.riskLevel];
+          if (!policy) {
+            return;
+          }
+          record.actionText = getControlLabel(policy.control);
+          if (policy.control === 'reject') {
+            record.discountRate = 0;
+            record.settledAmount = 0;
+            record.targetAddress = '--';
+            record.operable = false;
+          } else if (policy.control === 'discount') {
+            record.discountRate = Number(policy.discountRate || 0);
+            record.settledAmount = Math.floor(record.sourceAmount * record.discountRate / 100);
+            record.targetAddress = policy.address || '--';
+            record.operable = true;
+          } else {
+            record.discountRate = 100;
+            record.settledAmount = record.sourceAmount;
+            record.targetAddress = policy.address || '--';
+            record.operable = true;
+          }
+        });
+      }
+
+      function activate(pageId) {
+        buttons.forEach(function (button) {
+          button.classList.toggle('active', button.dataset.page === pageId);
+        });
+        pages.forEach(function (page) {
+          page.classList.toggle('active', page.id === pageId);
+        });
+        specPages.forEach(function (page) {
+          page.classList.toggle('active', page.dataset.specPage === pageId);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function openPolicyModal(riskKey) {
+        const policy = policyMap[riskKey];
+        if (!policy) {
+          return;
+        }
+        activeRiskKey = riskKey;
+        modalTitle.textContent = policy.title;
+        modalDesc.textContent = getControlDesc(riskKey);
+        modalMinScore.value = policy.minScore;
+        modalMaxScore.value = policy.maxScore;
+        modalControl.value = policy.control;
+        modalDiscount.value = policy.discountRate;
+        modalAddress.value = policy.address;
+        modalGoogleCode.value = '';
+        updateControlVisibility();
+        modal.classList.add('active');
+      }
+
+      function closePolicyModal() {
+        modal.classList.remove('active');
+      }
+
+      function getFilteredRecords() {
+        return records.filter(function (record) {
+          const userOk = !filterUser.value || record.userId.toLowerCase().includes(filterUser.value.trim().toLowerCase());
+          const orderOk = !filterOrder.value || record.orderNo.toLowerCase().includes(filterOrder.value.trim().toLowerCase());
+          const riskOk = !filterRisk.value || record.riskLevel === filterRisk.value;
+          const coinOk = !filterCoin.value || record.coin === filterCoin.value;
+          const recordTime = new Date(record.updatedAt.replace(' ', 'T'));
+          const startOk = !filterUpdatedStart.value || recordTime >= new Date(filterUpdatedStart.value);
+          const endOk = !filterUpdatedEnd.value || recordTime <= new Date(filterUpdatedEnd.value);
+          return userOk && orderOk && riskOk && coinOk && startOk && endOk;
+        });
+      }
+
+      function openRecordDetail(record) {
+        const risk = riskMap[record.riskLevel];
+        const providerHtml = (record.providerResults || []).map(function (item) {
+          return '<div class="desc-item"><span>' + item.name + '</span><strong>分数：' + item.score + '，原因：' + item.reason + '</strong></div>';
+        }).join('');
+        recordDetailContent.innerHTML =
+          '<div class="desc-list">' +
+            '<div class="desc-item"><span>订单号</span><strong>' + record.orderNo + '</strong></div>' +
+            '<div class="desc-item"><span>充值 HASH</span><strong>' + record.hash + '</strong></div>' +
+            '<div class="desc-item"><span>用户 ID</span><strong>' + record.userId + '</strong></div>' +
+            '<div class="desc-item"><span>风险等级</span><strong class="' + risk.className + '">' + risk.label + '</strong></div>' +
+            '<div class="desc-item"><span>相关原因</span><strong>' + record.reason + '</strong></div>' +
+            '<div class="desc-item"><span>风险分数</span><strong>' + record.score + '</strong></div>' +
+            '<div class="desc-item"><span>最后更新时间</span><strong>' + record.updatedAt + '</strong></div>' +
+            '<div class="desc-item"><span>FROM 地址</span><strong>' + record.fromAddress + '</strong></div>' +
+            '<div class="desc-item"><span>收款地址</span><strong>' + record.receiveAddress + '</strong></div>' +
+            '<div class="desc-item"><span>原始入金金额</span><strong>' + record.sourceAmount + ' ' + record.coin + '</strong></div>' +
+            '<div class="desc-item"><span>入金控制</span><strong>' + record.actionText + '</strong></div>' +
+            '<div class="desc-item"><span>折扣比例</span><strong>' + (record.discountRate ? record.discountRate + '%' : '--') + '</strong></div>' +
+            '<div class="desc-item"><span>到账金额</span><strong>' + record.settledAmount + ' ' + record.coin + '</strong></div>' +
+            '<div class="desc-item"><span>归集地址</span><strong>' + record.targetAddress + '</strong></div>' +
+            '<div class="desc-item"><span>服务商返回结果</span><strong>见下方各服务商分数与原因</strong></div>' +
+            providerHtml +
+          '</div>';
+        recordDetailModal.classList.add('active');
+      }
+
+      function closeRecordDetail() {
+        recordDetailModal.classList.remove('active');
+      }
+
+      function renderRecords() {
+        const list = getFilteredRecords();
+        const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+        const granularityLabelMap = {
+          day: '日',
+          week: '周',
+          month: '月',
+          total: '总'
+        };
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageList = list.slice(startIndex, startIndex + pageSize);
+
+        summary.textContent = '当前共 ' + list.length + ' 笔 KYT 充值记录，统计维度：' + granularityLabelMap[filterGranularity.value];
+        pageSummary.textContent = '第 ' + currentPage + ' 页 / 共 ' + totalPages + ' 页';
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+
+        tbody.innerHTML = pageList.map(function (record) {
+          const risk = riskMap[record.riskLevel];
+          return (
+            '<tr class="record-row" data-order="' + record.orderNo + '">' +
+              '<td>' + record.orderNo + '</td>' +
+              '<td>' + record.userId + '</td>' +
+              '<td><span class="risk-tag ' + risk.className + '">' + risk.label + '</span></td>' +
+              '<td>' + record.reason + '</td>' +
+              '<td>' + record.score + '</td>' +
+              '<td>' + record.updatedAt + '</td>' +
+              '<td>' + record.sourceAmount + ' ' + record.coin + '</td>' +
+              '<td>' + record.actionText + '</td>' +
+              '<td>' + record.settledAmount + ' ' + record.coin + '</td>' +
+              '<td><button type="button" class="button secondary detail-trigger" data-order="' + record.orderNo + '">查看详情</button></td>' +
+            '</tr>'
+          );
+        }).join('');
+
+        if (!pageList.length) {
+          return;
+        }
+
+        Array.from(document.querySelectorAll('.record-row')).forEach(function (row) {
+          row.addEventListener('click', function (event) {
+            if (event.target.closest('.detail-trigger')) {
+              return;
+            }
+          });
+        });
+
+        Array.from(document.querySelectorAll('.detail-trigger')).forEach(function (button) {
+          button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const record = records.find(function (item) {
+              return item.orderNo === button.dataset.order;
+            });
+            if (record) {
+              openRecordDetail(record);
+            }
+          });
+        });
+      }
+
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          activate(button.dataset.page);
+        });
+      });
+
+      configButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          openPolicyModal(button.dataset.risk);
+        });
+      });
+
+      modalControl.addEventListener('change', updateControlVisibility);
+      modalGoogleBtn.addEventListener('click', function () {
+        modalGoogleCode.value = '624981';
+      });
+      modalCancel.addEventListener('click', closePolicyModal);
+      modalConfirm.addEventListener('click', function () {
+        if (!activeRiskKey) {
+          return;
+        }
+        const policy = policyMap[activeRiskKey];
+        let minScore = Number(modalMinScore.value || 0);
+        let maxScore = Number(modalMaxScore.value || 0);
+        if (minScore > maxScore) {
+          const temp = minScore;
+          minScore = maxScore;
+          maxScore = temp;
+        }
+        policy.minScore = minScore;
+        policy.maxScore = maxScore;
+        policy.control = modalControl.value;
+        policy.discountRate = policy.control === 'discount' ? Number(modalDiscount.value || 0) : (policy.control === 'direct' ? 100 : '');
+        policy.address = policy.control === 'reject' ? '' : modalAddress.value.trim();
+        policy.desc = getControlDesc(activeRiskKey);
+        syncPolicyToPage(activeRiskKey);
+        syncRecordsFromPolicy();
+        renderRecords();
+        closePolicyModal();
+      });
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          closePolicyModal();
+        }
+      });
+
+      applyBtn.addEventListener('click', function () {
+        currentPage = 1;
+        renderRecords();
+      });
+      filterGranularity.addEventListener('change', function () {
+        currentPage = 1;
+        renderRecords();
+      });
+      resetBtn.addEventListener('click', function () {
+        filterUser.value = '';
+        filterOrder.value = '';
+        filterRisk.value = '';
+        filterCoin.value = '';
+        filterGranularity.value = 'day';
+        filterUpdatedStart.value = '';
+        filterUpdatedEnd.value = '';
+        currentPage = 1;
+        renderRecords();
+      });
+
+      prevPageBtn.addEventListener('click', function () {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          renderRecords();
+        }
+      });
+
+      nextPageBtn.addEventListener('click', function () {
+        const totalPages = Math.max(1, Math.ceil(getFilteredRecords().length / pageSize));
+        if (currentPage < totalPages) {
+          currentPage += 1;
+          renderRecords();
+        }
+      });
+
+      recordDetailClose.addEventListener('click', closeRecordDetail);
+      recordDetailModal.addEventListener('click', function (event) {
+        if (event.target === recordDetailModal) {
+          closeRecordDetail();
+        }
+      });
+
+      Object.keys(policyMap).forEach(syncPolicyToPage);
+      syncRecordsFromPolicy();
+      renderRecords();
+    })();
+  </script>
+</body>
+</html>
