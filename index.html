@@ -1010,7 +1010,7 @@
     </main>
   </div>
 
-  <button type="button" class="button secondary spec-toggle" id="spec-toggle">展开口径</button>
+  <button type="button" class="button secondary spec-toggle" id="spec-toggle">展开口径定义文档</button>
 
   <aside class="spec-sidebar collapsed" id="spec-sidebar">
     <h3>口径说明</h3>
@@ -1423,7 +1423,7 @@
 
       function setSpecCollapsed(collapsed) {
         specSidebar.classList.toggle('collapsed', collapsed);
-        specToggle.textContent = collapsed ? '展开口径' : '收回口径';
+        specToggle.textContent = collapsed ? '展开口径定义文档' : '收回口径';
       }
 
       function openPolicyModal(riskKey) {
