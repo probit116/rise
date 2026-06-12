@@ -635,10 +635,10 @@
 
     .spec-sidebar {
       position: fixed;
-      top: 24px;
+      top: 74px;
       right: 20px;
       width: 320px;
-      max-height: calc(100vh - 48px);
+      max-height: calc(100vh - 98px);
       overflow: auto;
       padding: 18px;
       border-radius: var(--radius-xl);
@@ -646,6 +646,20 @@
       background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
       box-shadow: var(--shadow);
       z-index: 30;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .spec-sidebar.collapsed {
+      transform: translateX(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spec-toggle {
+      position: fixed;
+      top: 24px;
+      right: 20px;
+      z-index: 31;
     }
 
     .spec-sidebar h3 {
@@ -728,6 +742,18 @@
         width: auto;
         max-height: none;
         margin-top: 0;
+      }
+
+      .spec-sidebar.collapsed {
+        display: none;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .spec-toggle {
+        top: 12px;
+        right: 12px;
       }
     }
   </style>
@@ -984,56 +1010,154 @@
     </main>
   </div>
 
-  <aside class="spec-sidebar">
+  <button type="button" class="button secondary spec-toggle" id="spec-toggle">展开口径</button>
+
+  <aside class="spec-sidebar collapsed" id="spec-sidebar">
     <h3>口径说明</h3>
     <div class="spec-page active" data-spec-page="kyt-config">
       <div class="spec-card">
-        <strong>折合金额(U)</strong>
-        <span>数据概览中的金额统一展示为折合 U 金额。充值币种为 USDT 时按 1:1 折合；充值币种为其他币种时，按该笔充值发生时间对应的现货 USDT 币对成交价折合为 U。</span>
+        <strong>数据概览-统计维度</strong>
+        <span>顶部数据概览支持日、周、月、总四种统计维度，默认显示日数据。切换统计维度后，仅影响顶部数据概览的统计口径，不改变下方配置表与充值记录的字段结构。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-严重风险</strong>
+        <span>展示当前统计维度内命中严重风险的充值笔数与折合金额。折合金额统一折合为 U；充值币种为 USDT 时按 1:1 折合，其他币种按充值发生时间当时对应现货 USDT 币对价格折合。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-高风险</strong>
+        <span>展示当前统计维度内命中高风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-中风险</strong>
+        <span>展示当前统计维度内命中中风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-低风险</strong>
+        <span>展示当前统计维度内命中低风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>KYT 风险列表图</strong>
+        <span>列表固定展示严重风险、高风险、中风险、低风险四条配置，不允许新增或删除风险等级。每条配置展示风险等级、最低分、最高分、入金控制、折扣比例、归集地址、配置按钮。</span>
       </div>
       <div class="spec-card">
         <strong>风险等级</strong>
-        <span>固定为严重风险、高风险、中风险、低风险四档，按最低分与最高分区间命中。</span>
+        <span>风险等级固定为严重风险、高风险、中风险、低风险四档。命中规则按风险分数落入对应最低分与最高分区间判断，区间边界为闭区间，包含最低分与最高分。</span>
+      </div>
+      <div class="spec-card">
+        <strong>最低分 / 最高分</strong>
+        <span>最低分与最高分为每个风险等级的命中分数区间。开发按分数区间进行命中判断；测试按输入分数是否落入对应区间验证结果。若最低分大于最高分，页面确认时自动交换，保证区间有效。</span>
       </div>
       <div class="spec-card">
         <strong>入金控制</strong>
-        <span>控制方式仅有拒绝充值入金、按折扣入金、直接入金三种。</span>
+        <span>入金控制仅允许三种取值：拒绝充值入金、按折扣入金、直接入金。命中严重风险时可配置为拒绝充值入金；命中高风险或中风险时可配置为按折扣入金；命中低风险时可配置为直接入金。</span>
+      </div>
+      <div class="spec-card">
+        <strong>折扣比例</strong>
+        <span>仅当入金控制选择按折扣入金时展示并填写折扣比例，折扣比例取值范围为 0 到 100 的整数。到账金额按原始入金金额乘以折扣比例后计算，展示时金额按页面现有精度显示。</span>
       </div>
       <div class="spec-card">
         <strong>归集地址</strong>
-        <span>仅按折扣入金或直接入金时展示并填写归集地址，拒绝充值入金不展示归集地址。</span>
+        <span>仅当入金控制为按折扣入金或直接入金时展示归集地址；入金控制为拒绝充值入金时归集地址固定显示为 --。归集地址为命中该风险等级后资金归集到的平台地址。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置按钮</strong>
+        <span>点击配置按钮后在当前页打开配置弹窗，不跳转页面。弹窗字段与列表字段一一对应，包含最低分、最高分、入金控制、折扣比例、归集地址、谷歌验证码、确认、取消。</span>
       </div>
     </div>
     <div class="spec-page" data-spec-page="deposit-records">
       <div class="spec-card">
-        <strong>记录范围</strong>
-        <span>KYT 充值记录展示全部风险等级充值记录，包含严重风险、高风险、中风险、低风险。</span>
+        <strong>KYT 充值记录</strong>
+        <span>列表展示全部风险等级的充值记录，包含严重风险、高风险、中风险、低风险。每条记录固定展示订单号、用户 ID、风险等级、相关原因、风险分数、最后更新时间、原始入金金额、入金控制、到账金额、查看详情。</span>
       </div>
       <div class="spec-card">
-        <strong>折合方式</strong>
-        <span>记录涉及金额统计时，USDT 按 1:1 折合；其他币种按充值时间当时对应现货 USDT 币对价格折合。</span>
+        <strong>筛选-用户 ID</strong>
+        <span>按用户唯一标识筛选充值记录，支持模糊匹配。输入内容命中用户 ID 字符串即返回该用户相关记录。</span>
       </div>
       <div class="spec-card">
-        <strong>列表字段</strong>
-        <span>列表仅展示订单号、用户 ID、风险等级、相关原因、风险分数、最后更新时间、原始入金金额、入金控制、到账金额。</span>
+        <strong>筛选-订单号</strong>
+        <span>按充值订单号筛选记录，支持模糊匹配。输入内容命中订单号字符串即返回对应记录。</span>
       </div>
       <div class="spec-card">
-        <strong>筛选项</strong>
-        <span>筛选项包含用户 ID、订单号、风险等级、币种、开始时间、结束时间；统计维度放在顶部数据概览区域。</span>
+        <strong>筛选-风险等级</strong>
+        <span>风险等级筛选支持全部、严重风险、高风险、中风险、低风险。选择某一风险等级后，仅展示命中该风险等级的充值记录。</span>
+      </div>
+      <div class="spec-card">
+        <strong>筛选-币种</strong>
+        <span>币种筛选按充值币种过滤记录。当前原型展示 USDT、BTC 两种币种，开发时按系统支持的充值币种返回。</span>
+      </div>
+      <div class="spec-card">
+        <strong>筛选-开始时间 / 结束时间</strong>
+        <span>开始时间与结束时间按最后更新时间进行区间筛选，精度到秒。开始时间表示大于等于该时间的记录，结束时间表示小于等于该时间的记录。</span>
+      </div>
+      <div class="spec-card">
+        <strong>订单号</strong>
+        <span>订单号为平台内部唯一充值记录编号，用于唯一定位一笔充值记录。测试可通过订单号直接核对详情弹窗与列表是否一致。</span>
+      </div>
+      <div class="spec-card">
+        <strong>用户 ID</strong>
+        <span>用户 ID 为充值发起用户在平台内的唯一用户标识，一条充值记录只对应一个用户 ID。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险等级</strong>
+        <span>风险等级为该笔充值根据 KYT 风险分数命中的最终风险档位，取值固定为严重风险、高风险、中风险、低风险。</span>
+      </div>
+      <div class="spec-card">
+        <strong>相关原因</strong>
+        <span>相关原因展示该笔充值被命中当前风险等级的核心原因摘要，用于列表快速判断风险来源，如命中制裁名单、异常地址交互、混币接触史等。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险分数</strong>
+        <span>风险分数为该笔充值最终采用的 KYT 风险分数。开发按系统最终落库分数展示；测试按分数是否落入当前风险等级区间核验。</span>
+      </div>
+      <div class="spec-card">
+        <strong>最后更新时间</strong>
+        <span>最后更新时间为该笔充值记录最近一次风险识别或处置结果更新的时间，列表展示精度到秒，格式为 YYYY-MM-DD HH:mm:ss。</span>
+      </div>
+      <div class="spec-card">
+        <strong>原始入金金额</strong>
+        <span>原始入金金额为用户链上实际充值的原始币种金额，列表展示时保留原始数值和币种，不做折合展示。</span>
+      </div>
+      <div class="spec-card">
+        <strong>入金控制</strong>
+        <span>入金控制展示该笔充值命中当前风险等级后实际执行的处置结果，取值仅为拒绝充值入金、按折扣入金、直接入金。</span>
+      </div>
+      <div class="spec-card">
+        <strong>到账金额</strong>
+        <span>到账金额为根据入金控制计算后的实际到账币种金额。拒绝充值入金时到账金额为 0；按折扣入金时到账金额按原始入金金额乘折扣比例计算；直接入金时到账金额等于原始入金金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>查看详情</strong>
+        <span>点击查看详情后打开当前页弹窗，展示该笔充值的完整链上信息与各服务商返回结果，不跳转页面。</span>
       </div>
       <div class="spec-card">
         <strong>详情弹窗</strong>
-        <span>查看详情弹窗展示充值 HASH、FROM 地址、收款地址以及各服务商返回的 KYT 分数与原因。</span>
+        <span>详情弹窗固定展示订单号、充值 HASH、用户 ID、风险等级、相关原因、风险分数、最后更新时间、FROM 地址、收款地址、原始入金金额、入金控制、折扣比例、到账金额、归集地址，以及各服务商返回的 KYT 分数与原因。</span>
+      </div>
+      <div class="spec-card">
+        <strong>分页</strong>
+        <span>当 KYT 充值记录总数大于 10 笔时分页展示，每页固定展示 10 笔，支持上一页和下一页切换。</span>
       </div>
     </div>
     <div class="spec-page" data-spec-page="change-logs">
       <div class="spec-card">
-        <strong>配置快照</strong>
-        <span>当前配置快照展示四个风险等级的生效区间、入金控制、折扣比例与归集地址。</span>
+        <strong>当前配置快照-严重风险</strong>
+        <span>展示严重风险当前生效的分数区间、入金控制、折扣比例、归集地址。严重风险默认拒绝充值入金，折扣比例与归集地址显示为 --。</span>
       </div>
       <div class="spec-card">
-        <strong>变更日志</strong>
-        <span>变更日志记录最低分、最高分、入金控制、折扣比例、归集地址的变更前后值。</span>
+        <strong>当前配置快照-高风险</strong>
+        <span>展示高风险当前生效的分数区间、入金控制、折扣比例、归集地址。高风险命中后默认按折扣入金，并展示当前生效折扣比例与高风险归集地址。</span>
+      </div>
+      <div class="spec-card">
+        <strong>当前配置快照-中风险</strong>
+        <span>展示中风险当前生效的分数区间、入金控制、折扣比例、归集地址。中风险命中后默认按折扣入金，并展示当前生效折扣比例与中风险归集地址。</span>
+      </div>
+      <div class="spec-card">
+        <strong>当前配置快照-低风险</strong>
+        <span>展示低风险当前生效的分数区间、入金控制、折扣比例、归集地址。低风险命中后默认直接入金，折扣比例固定为 100%。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置变更记录</strong>
+        <span>配置变更记录展示每次配置修改后的变更日志，至少包含变更时间、操作人、变更字段、变更前值、变更后值、备注。当前页面示例展示折扣比例、归集地址、分数区间三类变更。</span>
       </div>
     </div>
   </aside>
@@ -1106,6 +1230,8 @@
       const buttons = Array.from(document.querySelectorAll('.nav-btn'));
       const pages = Array.from(document.querySelectorAll('.page'));
       const specPages = Array.from(document.querySelectorAll('.spec-page'));
+      const specSidebar = document.getElementById('spec-sidebar');
+      const specToggle = document.getElementById('spec-toggle');
       const configButtons = Array.from(document.querySelectorAll('.config-trigger'));
       const tbody = document.getElementById('record-tbody');
       const summary = document.getElementById('record-summary');
@@ -1295,6 +1421,11 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
+      function setSpecCollapsed(collapsed) {
+        specSidebar.classList.toggle('collapsed', collapsed);
+        specToggle.textContent = collapsed ? '展开口径' : '收回口径';
+      }
+
       function openPolicyModal(riskKey) {
         const policy = policyMap[riskKey];
         if (!policy) {
@@ -1431,6 +1562,10 @@
         });
       });
 
+      specToggle.addEventListener('click', function () {
+        setSpecCollapsed(!specSidebar.classList.contains('collapsed'));
+      });
+
       configButtons.forEach(function (button) {
         button.addEventListener('click', function (event) {
           event.preventDefault();
@@ -1517,6 +1652,7 @@
 
       Object.keys(policyMap).forEach(syncPolicyToPage);
       syncRecordsFromPolicy();
+      setSpecCollapsed(true);
       renderRecords();
     })();
   </script>
