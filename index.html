@@ -1,909 +1,1070 @@
-<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ADL 盈利减仓原型</title>
+  <title>KYT 风险入金配置</title>
   <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#101a28;
-      --panel-soft:#142238;
-      --line:rgba(148,163,184,.14);
-      --text:#eef5ff;
-      --muted:#8ea4c1;
-      --primary:#56a7ff;
-      --danger:#ff5d6c;
-      --warn:#ff914d;
-      --ok:#2ed3a1;
-      --radius-xl:24px;
-      --radius-lg:18px;
-      --radius-md:14px;
-      --shadow:0 24px 60px rgba(0,0,0,.28);
-      --font-display:"STZhongsong","Microsoft YaHei",sans-serif;
-      --font-body:"PingFang SC","Microsoft YaHei",sans-serif;
+    :root {
+      --bg: #09111c;
+      --panel: #101a28;
+      --panel-soft: #162235;
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #eef5ff;
+      --muted: #8ea4c1;
+      --primary: #56a7ff;
+      --serious: #ff5d6c;
+      --high: #ff914d;
+      --medium: #f3c75a;
+      --low: #2ed3a1;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      --font-display: "STZhongsong", "Microsoft YaHei", sans-serif;
+      --font-body: "PingFang SC", "Microsoft YaHei", sans-serif;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      min-height:100vh;
-      color:var(--text);
-      font-family:var(--font-body);
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-body);
       background:
-        radial-gradient(circle at top left, rgba(86,167,255,.16), transparent 26%),
-        radial-gradient(circle at 86% 8%, rgba(255,145,77,.14), transparent 24%),
-        linear-gradient(180deg, #07101a 0%, #0b1220 45%, #07101a 100%);
+        radial-gradient(circle at top left, rgba(86, 167, 255, 0.18), transparent 26%),
+        radial-gradient(circle at 86% 8%, rgba(255, 145, 77, 0.14), transparent 24%),
+        linear-gradient(180deg, #07101a 0%, #09111c 45%, #08111a 100%);
     }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
       background-image:
-        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
-      background-size:38px 38px;
-      mask-image:linear-gradient(180deg, rgba(255,255,255,.7), transparent 90%);
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(180deg, rgba(255,255,255,0.7), transparent 90%);
     }
 
-    .app-shell{
-      width:min(1500px, calc(100vw - 40px));
-      margin:20px auto;
-      display:grid;
-      grid-template-columns:290px minmax(0,1fr);
-      gap:20px;
+    .app-shell {
+      width: min(1480px, calc(100vw - 40px));
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr);
+      gap: 20px;
     }
 
-    .sidebar{
-      position:sticky;
-      top:20px;
-      height:calc(100vh - 40px);
-      padding:22px;
-      border-radius:var(--radius-xl);
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(16,26,40,.96), rgba(9,17,28,.96));
-      box-shadow:var(--shadow);
-      display:flex;
-      flex-direction:column;
-      gap:14px;
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      height: calc(100vh - 40px);
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.96), rgba(9, 17, 28, 0.96));
+      box-shadow: var(--shadow);
     }
-    .eyebrow{
-      display:inline-flex;
-      padding:7px 12px;
-      border-radius:999px;
-      background:rgba(86,167,255,.12);
-      color:#a6cdff;
-      font-size:12px;
-      letter-spacing:.08em;
-      width:max-content;
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(86, 167, 255, 0.12);
+      color: #a6cdff;
+      font-size: 12px;
+      letter-spacing: 0.08em;
     }
-    .sidebar h1{
-      margin:0;
-      font-family:var(--font-display);
-      font-size:26px;
-      line-height:1.35;
+
+    .sidebar h1 {
+      margin: 16px 0 10px;
+      font-family: var(--font-display);
+      font-size: 28px;
+      line-height: 1.35;
     }
-    .sidebar p{
-      margin:0;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.85;
+
+    .sidebar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
     }
-    .nav-list{
-      display:grid;
-      gap:12px;
-      margin-top:10px;
+
+    .nav-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
     }
-    .nav-btn{
-      width:100%;
-      padding:18px;
-      border:1px solid rgba(148,163,184,.12);
-      border-radius:var(--radius-lg);
-      background:rgba(255,255,255,.03);
-      color:var(--text);
-      text-align:left;
-      cursor:pointer;
-      transition:all .18s ease;
+
+    .nav-btn {
+      width: 100%;
+      padding: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
     }
+
     .nav-btn:hover,
-    .nav-btn.active{
-      border-color:rgba(86,167,255,.52);
-      background:linear-gradient(135deg, rgba(86,167,255,.2), rgba(19,29,42,.92));
-      transform:translateY(-1px);
-    }
-    .nav-btn strong, .nav-btn span{display:block}
-    .nav-btn strong{font-size:16px; margin-bottom:8px}
-    .nav-btn span{font-size:12px; color:var(--muted); line-height:1.7}
-    .nav-btn.active span{color:#dceaff}
-
-    .content{display:grid; gap:20px; align-content:start}
-    .overview-bar, .section-card{
-      border-radius:var(--radius-xl);
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(16,26,40,.96), rgba(10,18,30,.96));
-      box-shadow:var(--shadow);
+    .nav-btn.active {
+      border-color: rgba(86, 167, 255, 0.52);
+      background: linear-gradient(135deg, rgba(86, 167, 255, 0.2), rgba(19, 29, 42, 0.92));
+      transform: translateY(-1px);
     }
 
-    .overview-bar{
-      position:sticky;
-      top:20px;
-      z-index:8;
-      padding:18px 20px;
-    }
-    .overview-bar__head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .overview-bar__head h3{
-      margin:0;
-      font-size:20px;
-    }
-    .pill-group{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .pill{
-      border:1px solid rgba(148,163,184,.16);
-      background:rgba(255,255,255,.04);
-      color:var(--text);
-      padding:8px 12px;
-      border-radius:999px;
-      font-size:12px;
-      cursor:pointer;
-      transition:all .15s ease;
-    }
-    .pill.active{
-      border-color:rgba(86,167,255,.6);
-      background:rgba(86,167,255,.14);
-      color:#dceaff;
-    }
-    .overview-grid{
-      display:grid;
-      grid-template-columns:repeat(4, minmax(0,1fr));
-      gap:12px;
-    }
-    .overview-card{
-      padding:16px;
-      border-radius:var(--radius-md);
-      border:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.03);
-      min-height:86px;
-    }
-    .overview-card small{
-      display:block;
-      color:var(--muted);
-      margin-bottom:8px;
-      font-size:12px;
-    }
-    .overview-card strong{
-      display:block;
-      font-size:18px;
-      letter-spacing:.02em;
-      word-break:break-all;
-    }
-    .overview-card span{
-      display:block;
-      margin-top:6px;
-      color:#dbe7f3;
-      font-size:12px;
-    }
-    .text-ok{color:var(--ok)}
-    .text-danger{color:var(--danger)}
-    .text-warn{color:var(--warn)}
+    .nav-btn strong,
+    .nav-btn span { display: block; }
+    .nav-btn strong { font-size: 17px; margin-bottom: 8px; }
+    .nav-btn span { font-size: 12px; color: var(--muted); line-height: 1.7; }
+    .nav-btn.active span { color: #dceaff; }
 
-    .page{display:none}
-    .page.active{display:block}
-
-    .section-card{padding:18px 20px}
-    .section-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:14px;
-      margin-bottom:12px;
-    }
-    .section-head h4, .section-head h3{margin:0}
-    .section-head h3{font-size:20px}
-    .breadcrumb{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:var(--muted);
-      font-size:12px;
-    }
-    .breadcrumb b{color:#dceaff; font-weight:600}
-
-    .field-grid{
-      display:grid;
-      grid-template-columns:repeat(4, minmax(0,1fr));
-      gap:12px;
-      padding:14px;
-      border-radius:var(--radius-lg);
-      border:1px solid rgba(148,163,184,.12);
-      background:rgba(255,255,255,.03);
-    }
-    .field label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:8px;
-    }
-    .field input, .field select{
-      width:100%;
-      height:42px;
-      border-radius:12px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(11,18,32,.72);
-      color:var(--text);
-      padding:0 12px;
-      outline:none;
-    }
-    .field input::placeholder{color:rgba(142,164,193,.75)}
-    .button-group{display:flex; gap:10px; flex-wrap:wrap}
-    .button{
-      height:42px;
-      padding:0 14px;
-      border-radius:12px;
-      border:1px solid rgba(86,167,255,.55);
-      background:rgba(86,167,255,.18);
-      color:var(--text);
-      cursor:pointer;
-      transition:all .15s ease;
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .button:hover{transform:translateY(-1px); background:rgba(86,167,255,.24)}
-    .button.secondary{
-      border-color:rgba(148,163,184,.22);
-      background:rgba(255,255,255,.04);
-    }
-    .button.secondary:hover{background:rgba(255,255,255,.07)}
-    .button.danger{
-      border-color:rgba(255,93,108,.6);
-      background:rgba(255,93,108,.16);
-    }
-    .button.success{
-      border-color:rgba(46,211,161,.55);
-      background:rgba(46,211,161,.14);
+    .side-note {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
     }
 
-    table{width:100%; border-collapse:collapse}
-    thead th{
-      text-align:left;
-      font-size:12px;
-      color:var(--muted);
-      font-weight:600;
-      padding:12px 10px;
-      border-bottom:1px solid rgba(148,163,184,.14);
-    }
-    tbody td{
-      padding:12px 10px;
-      border-bottom:1px solid rgba(148,163,184,.10);
-      font-size:13px;
-      vertical-align:top;
-      word-break:break-word;
-    }
-    tbody tr:hover{background:rgba(255,255,255,.02)}
-    .tag{
-      display:inline-flex;
-      align-items:center;
-      height:22px;
-      padding:0 10px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(255,255,255,.04);
-    }
-    .tag.ok{border-color:rgba(46,211,161,.45); background:rgba(46,211,161,.12); color:#a7ffe6}
-    .tag.warn{border-color:rgba(255,145,77,.55); background:rgba(255,145,77,.14); color:#ffe2cf}
-    .tag.danger{border-color:rgba(255,93,108,.55); background:rgba(255,93,108,.14); color:#ffd1d6}
-
-    .table-wrap{
-      margin-top:12px;
-      border-radius:var(--radius-lg);
-      border:1px solid rgba(148,163,184,.12);
-      background:rgba(255,255,255,.02);
-      overflow:hidden;
-    }
-    .footer-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-top:12px;
-      flex-wrap:wrap;
-      color:var(--muted);
-      font-size:12px;
-    }
-    .pagination{display:flex; gap:8px; align-items:center}
-    .page-chip{
-      height:34px;
-      padding:0 12px;
-      border-radius:10px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(255,255,255,.04);
-      color:var(--text);
-      cursor:pointer;
-      font-size:12px;
-    }
-    .page-chip:disabled{opacity:.45; cursor:not-allowed}
-
-    .tabs{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-    .tab{
-      height:38px;
-      padding:0 14px;
-      border-radius:12px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(255,255,255,.04);
-      color:var(--text);
-      cursor:pointer;
-      font-size:12px;
-    }
-    .tab.active{
-      border-color:rgba(86,167,255,.6);
-      background:rgba(86,167,255,.16);
+    .content {
+      display: grid;
+      gap: 20px;
+      align-content: start;
     }
 
-    .detail-grid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:10px;
-      margin-top:12px;
-      padding:14px;
-      border-radius:var(--radius-lg);
-      border:1px solid rgba(148,163,184,.12);
-      background:rgba(255,255,255,.03);
-    }
-    .detail-item{
-      padding:12px;
-      border-radius:var(--radius-md);
-      border:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.03);
-      min-height:72px;
-    }
-    .detail-item small{display:block; color:var(--muted); font-size:12px; margin-bottom:8px}
-    .detail-item strong{display:block; font-size:14px; word-break:break-word}
-
-    .spec-toggle{
-      position:fixed;
-      right:22px;
-      bottom:22px;
-      z-index:50;
-    }
-    .spec-sidebar{
-      position:fixed;
-      top:0;
-      right:0;
-      width:min(420px, calc(100vw - 40px));
-      height:100vh;
-      padding:20px 18px 22px;
-      border-left:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(9,17,28,.98), rgba(12,18,30,.96));
-      box-shadow:-24px 0 60px rgba(0,0,0,.35);
-      transform:translateX(0);
-      transition:transform .22s ease;
-      z-index:40;
-      overflow:auto;
-    }
-    .spec-sidebar.collapsed{transform:translateX(calc(100% - 44px))}
-    .spec-sidebar h3{margin:0 0 12px; font-size:16px}
-    .spec-card{
-      padding:14px 14px;
-      border-radius:var(--radius-lg);
-      border:1px solid rgba(148,163,184,.14);
-      background:rgba(255,255,255,.03);
-      margin-bottom:10px;
-    }
-    .spec-card strong{display:block; font-size:13px; margin-bottom:8px}
-    .spec-card span{display:block; font-size:12px; color:#d0dceb; line-height:1.85}
-    .spec-page{display:none}
-    .spec-page.active{display:block}
-
-    .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:22px;
-      background:rgba(6,10,16,.65);
-      z-index:60;
-    }
-    .modal.active{display:flex}
-    .modal-panel{
-      width:min(560px, 100%);
-      border-radius:var(--radius-xl);
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(16,26,40,.98), rgba(9,17,28,.98));
-      box-shadow:var(--shadow);
-      padding:18px 18px 16px;
-    }
-    .modal-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .modal-head h4{margin:0; font-size:18px}
-    .modal-head p{margin:8px 0 0; color:var(--muted); font-size:12px; line-height:1.7}
-    .modal-form{display:grid; gap:12px}
-    .modal-field label{display:block; font-size:12px; color:var(--muted); margin-bottom:8px}
-    .modal-field input, .modal-field select{
-      width:100%;
-      height:42px;
-      border-radius:12px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(11,18,32,.72);
-      color:var(--text);
-      padding:0 12px;
-      outline:none;
-    }
-    .modal-field input[readonly]{
-      background:rgba(255,255,255,.05);
-      color:#dceaff;
-    }
-    .score-link{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:34px;
-      padding:0 10px;
-      border-radius:10px;
-      border:1px solid rgba(86,167,255,.42);
-      background:rgba(86,167,255,.14);
-      color:#dceaff;
-      font-size:12px;
-      cursor:pointer;
-      transition:all .15s ease;
-    }
-    .score-link:hover{
-      transform:translateY(-1px);
-      background:rgba(86,167,255,.22);
-    }
-    .modal-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0,1fr));
-      gap:12px;
-    }
-    .inline-input{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:10px;
-      align-items:center;
-    }
-    .error-text{
-      min-height:18px;
-      color:#ffb3bb;
-      font-size:12px;
-      line-height:1.6;
-    }
-    .formula-box{
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(86,167,255,.18);
-      background:rgba(255,255,255,.03);
-      color:#dceaff;
-      font-size:12px;
-      line-height:1.8;
-      white-space:pre-line;
-    }
-    .hint{
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,145,77,.28);
-      background:rgba(255,145,77,.10);
-      color:#ffe8d8;
-      font-size:12px;
-      line-height:1.7;
-    }
-    .radio-row{display:flex; gap:12px; flex-wrap:wrap}
-    .radio{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(148,163,184,.18);
-      background:rgba(255,255,255,.03);
-      font-size:12px;
-      color:var(--text);
-      cursor:pointer;
-    }
-    .radio input{accent-color:var(--primary)}
-    .modal-kpis{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      margin-top:6px;
-    }
-    .kpi{
-      padding:12px;
-      border-radius:var(--radius-md);
-      border:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.03);
-    }
-    .kpi small{display:block; color:var(--muted); font-size:12px; margin-bottom:8px}
-    .kpi strong{display:block; font-size:16px}
-    .modal-actions{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-      margin-top:14px;
+    .hero,
+    .overview-bar,
+    .section-card {
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.96), rgba(10, 18, 30, 0.96));
+      box-shadow: var(--shadow);
     }
 
-    @media (max-width: 1100px){
-      .app-shell{grid-template-columns:1fr}
-      .sidebar{position:relative; height:auto}
-      .overview-grid{grid-template-columns:repeat(2, minmax(0,1fr))}
-      .field-grid{grid-template-columns:repeat(2, minmax(0,1fr))}
-      .detail-grid{grid-template-columns:repeat(2, minmax(0,1fr))}
+    .hero {
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
     }
-    @media (max-width: 640px){
-      .overview-grid{grid-template-columns:1fr}
-      .field-grid{grid-template-columns:1fr}
-      .detail-grid{grid-template-columns:1fr}
-      .modal-grid{grid-template-columns:1fr}
-      .inline-input{grid-template-columns:1fr}
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -50px;
+      top: -30px;
+      width: 200px;
+      height: 200px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(86, 167, 255, 0.18), transparent 72%);
+    }
+
+    .hero h2 {
+      position: relative;
+      z-index: 1;
+      margin: 12px 0 10px;
+      font-family: var(--font-display);
+      font-size: 34px;
+      line-height: 1.35;
+    }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      max-width: 880px;
+      margin: 0;
+      color: #d0dceb;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    .hero-strip {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .hero-item {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .hero-item small { display: block; color: var(--muted); margin-bottom: 8px; }
+    .hero-item strong { display: block; font-size: 22px; }
+    .hero-item span { display: block; margin-top: 6px; color: #dbe7f3; font-size: 12px; }
+
+    .overview-bar {
+      position: sticky;
+      top: 20px;
+      z-index: 8;
+      padding: 18px 20px;
+    }
+
+    .overview-bar__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .overview-bar__head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .overview-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .overview-card small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .overview-card strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .overview-card span {
+      display: block;
+      margin-top: 6px;
+      color: #dbe7f3;
+      font-size: 12px;
+    }
+
+    .page {
+      display: none;
+      gap: 20px;
+    }
+
+    .page.active { display: grid; }
+
+    .section-card { padding: 24px; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .section-head h3 { margin: 0; font-size: 22px; }
+    .section-head p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; max-width: 880px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(86, 167, 255, 0.12);
+      color: #abd0ff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .button {
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(86, 167, 255, 0.28);
+      background: rgba(86, 167, 255, 0.12);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .button.secondary {
+      border-color: rgba(148, 163, 184, 0.18);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .summary-grid,
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card,
+    .snapshot-card,
+    .detail-card,
+    .log-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .summary-card small,
+    .snapshot-card small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    .summary-card strong,
+    .snapshot-card strong {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .summary-card span,
+    .snapshot-card span { color: #d8e6f3; font-size: 12px; line-height: 1.7; }
+
+    .risk-table-wrap,
+    .record-table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    th { color: #d4e6ff; background: rgba(86, 167, 255, 0.08); }
+    tr:last-child td { border-bottom: 0; }
+
+    .risk-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .risk-tag::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .serious { color: var(--serious); background: rgba(255, 93, 108, 0.12); }
+    .high { color: var(--high); background: rgba(255, 145, 77, 0.12); }
+    .medium { color: var(--medium); background: rgba(243, 199, 90, 0.14); }
+    .low { color: var(--low); background: rgba(46, 211, 161, 0.14); }
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1.18fr 0.82fr;
+      gap: 18px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input,
+    .field select {
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+      color-scheme: dark;
+    }
+
+    .field select option {
+      background: #101a28;
+      color: #eef5ff;
+    }
+
+    .record-row {
+      cursor: pointer;
+      transition: background 0.16s ease;
+    }
+
+    .record-row:hover,
+    .record-row.active {
+      background: rgba(86, 167, 255, 0.08);
+    }
+
+    .desc-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 14px;
+    }
+    .desc-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex: 0 0 calc(50% - 9px);
+      padding: 10px 0;
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.12);
+      font-size: 13px;
+    }
+    .desc-item.full { flex-basis: 100%; }
+    .desc-item span:first-child { color: var(--muted); }
+    .desc-item span:first-child { flex: 0 0 96px; }
+    .desc-item strong {
+      flex: 1;
+      text-align: right;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .log-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .config-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 10, 16, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 40;
+    }
+
+    .config-modal.active {
+      display: flex;
+    }
+
+    .config-modal__panel {
+      width: min(760px, calc(100vw - 24px));
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(86, 167, 255, 0.22);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .config-modal__head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .config-modal__head h4 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .config-modal__head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .modal-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal-form__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .modal-field input,
+    .modal-field select,
+    .modal-field textarea {
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+      color-scheme: dark;
+    }
+
+    .modal-field textarea {
+      height: auto;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 74px;
+    }
+
+    .modal-field select option {
+      background: #101a28;
+      color: #eef5ff;
+    }
+
+    .modal-field--full {
+      grid-column: 1 / -1;
+    }
+
+    .modal-inline {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #record-review-decision {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .modal-radio {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .modal-radio input {
+      accent-color: var(--primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-error {
+      margin-top: 12px;
+      color: #ff8d98;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .record-detail-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 10, 16, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 41;
+    }
+
+    .record-detail-modal.active {
+      display: flex;
+    }
+
+    .record-detail-modal__panel {
+      width: min(820px, calc(100vw - 24px));
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 24px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(86, 167, 255, 0.22);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .log-card h4,
+    .detail-card h4,
+    .snapshot-card h4 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .log-card p,
+    .detail-card p,
+    .snapshot-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+      margin-top: 16px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .page-chip {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .spec-sidebar {
+      position: fixed;
+      top: 74px;
+      right: 20px;
+      width: 320px;
+      max-height: calc(100vh - 98px);
+      overflow: auto;
+      padding: 18px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: linear-gradient(180deg, rgba(16, 26, 40, 0.98), rgba(10, 18, 30, 0.98));
+      box-shadow: var(--shadow);
+      z-index: 30;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .spec-sidebar.collapsed {
+      transform: translateX(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spec-toggle {
+      position: fixed;
+      top: 24px;
+      right: 20px;
+      z-index: 31;
+    }
+
+    .spec-sidebar h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .spec-page {
+      display: none;
+      gap: 12px;
+    }
+
+    .spec-page.active {
+      display: grid;
+    }
+
+    .spec-card {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .spec-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .spec-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .page-chip[disabled] {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 1360px) {
+      .app-shell,
+      .split-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+      .hero-strip,
+      .overview-grid,
+      .summary-grid,
+      .snapshot-grid,
+      .field-grid,
+      .modal-form__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app-shell {
+        width: calc(100vw - 20px);
+        margin: 10px auto;
+      }
+      .hero,
+      .section-card,
+      .sidebar { padding: 18px; }
+      .hero-strip,
+      .overview-grid,
+      .summary-grid,
+      .snapshot-grid,
+      .field-grid,
+      .modal-form__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .spec-sidebar {
+        position: static;
+        width: auto;
+        max-height: none;
+        margin-top: 0;
+      }
+
+      .spec-sidebar.collapsed {
+        display: none;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .spec-toggle {
+        top: 12px;
+        right: 12px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="eyebrow">ADL · 原型</div>
-      <h1>ADL（自动减仓）盈利减仓</h1>
-      <p>单文件 HTML 原型：包含币对配置、配置编辑页面、减仓列表、减仓详情（订单记录/成交记录）。可本地直接打开并演示筛选、分页与页面切换。</p>
+      <h1>KYT 风险入金配置</h1>
 
       <div class="nav-list">
-        <button class="nav-btn active" data-page="pair-config">
-          <strong>币对配置</strong>
-          <span>配置触发阈值与统计周期</span>
+        <button class="nav-btn active" data-page="kyt-config">
+          <strong>KYT 风险列表图</strong>
         </button>
-        <button class="nav-btn" data-page="pair-users">
-          <strong>币对持仓用户</strong>
-          <span>按币对查看持仓用户</span>
+        <button class="nav-btn" data-page="deposit-records">
+          <strong>KYT 充值记录</strong>
         </button>
-        <button class="nav-btn" data-page="adl-list">
-          <strong>减仓列表</strong>
-          <span>按交易对/用户查看减仓概览</span>
-        </button>
-        <button class="nav-btn" data-page="adl-detail">
-          <strong>减仓详情</strong>
-          <span>订单记录 / 成交记录</span>
+        <button class="nav-btn" data-page="change-logs">
+          <strong>配置变更记录</strong>
         </button>
       </div>
     </aside>
 
     <main class="content">
-      <div class="overview-bar">
+      <section class="hero">
+        <h2>KYT 风险入金配置</h2>
+      </section>
+
+      <section class="overview-bar">
         <div class="overview-bar__head">
-          <h3 id="overview-title">ADL（自动减仓）币对配置</h3>
-          <div class="pill-group" aria-label="统计维度">
-            <button type="button" class="pill active" data-gran="day">日</button>
-            <button type="button" class="pill" data-gran="week">周</button>
-            <button type="button" class="pill" data-gran="month">月</button>
-            <button type="button" class="pill" data-gran="total">总</button>
+          <h3>数据概览</h3>
+          <div class="button-group">
+            <select id="filter-granularity" class="button secondary">
+              <option value="day" selected>日</option>
+              <option value="week">周</option>
+              <option value="month">月</option>
+              <option value="total">总</option>
+            </select>
           </div>
         </div>
-        <div class="overview-grid" id="overview-grid"></div>
-      </div>
+        <div class="overview-grid">
+          <div class="overview-card">
+            <small>严重风险</small>
+            <strong style="color: var(--serious);">18</strong>
+            <span>折合金额 29,600 U</span>
+          </div>
+          <div class="overview-card">
+            <small>高风险</small>
+            <strong style="color: var(--high);">42</strong>
+            <span>折合金额 68,400 U</span>
+          </div>
+          <div class="overview-card">
+            <small>中风险</small>
+            <strong style="color: var(--medium);">57</strong>
+            <span>折合金额 74,900 U</span>
+          </div>
+          <div class="overview-card">
+            <small>低风险</small>
+            <strong style="color: var(--low);">126</strong>
+            <span>折合金额 196,300 U</span>
+          </div>
+        </div>
+      </section>
 
-      <section id="pair-config" class="page active">
+      <section id="kyt-config" class="page active">
         <div class="section-card">
           <div class="section-head">
-            <div>
-              <div class="breadcrumb"><span>后台</span><span>›</span><span>ADL减仓</span><span>›</span><b>币对配置</b></div>
-              <h3>ADL（自动减仓）币对配置</h3>
-            </div>
-            <div class="button-group">
-              <button type="button" class="button success" id="add-config">添加币对配置</button>
-            </div>
+            <div><h3>KYT 风险列表图</h3></div>
+          </div>
+
+          <div class="risk-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>风险等级</th>
+                  <th>最低分</th>
+                  <th>最高分</th>
+                  <th>入金控制</th>
+                  <th>折扣比例</th>
+                  <th>归集地址</th>
+                  <th>配置</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="risk-tag serious">严重风险</span></td>
+                  <td><span data-policy="serious" data-field="min-score">90</span></td>
+                  <td><span data-policy="serious" data-field="max-score">100</span></td>
+                  <td><span data-policy="serious" data-field="control-label">拒绝充值入金</span></td>
+                  <td><span data-policy="serious" data-field="discount-label">--</span></td>
+                  <td><span data-policy="serious" data-field="address">--</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="serious">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag high">高风险</span></td>
+                  <td><span data-policy="high" data-field="min-score">75</span></td>
+                  <td><span data-policy="high" data-field="max-score">89</span></td>
+                  <td><span data-policy="high" data-field="control-label">按折扣入金</span></td>
+                  <td><span data-policy="high" data-field="discount-label">70%</span></td>
+                  <td><span data-policy="high" data-field="address">TQ8A-78XH-91KR-HR01</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="high">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag medium">中风险</span></td>
+                  <td><span data-policy="medium" data-field="min-score">55</span></td>
+                  <td><span data-policy="medium" data-field="max-score">74</span></td>
+                  <td><span data-policy="medium" data-field="control-label">按折扣入金</span></td>
+                  <td><span data-policy="medium" data-field="discount-label">88%</span></td>
+                  <td><span data-policy="medium" data-field="address">TQ8A-78XH-91KR-MD88</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="medium">配置</button></td>
+                </tr>
+                <tr>
+                  <td><span class="risk-tag low">低风险</span></td>
+                  <td><span data-policy="low" data-field="min-score">0</span></td>
+                  <td><span data-policy="low" data-field="max-score">54</span></td>
+                  <td><span data-policy="low" data-field="control-label">直接入金</span></td>
+                  <td><span data-policy="low" data-field="discount-label">100%</span></td>
+                  <td><span data-policy="low" data-field="address">TQ8A-78XH-91KR-LW00</span></td>
+                  <td><button type="button" class="button secondary config-trigger" data-risk="low">配置</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="deposit-records" class="page">
+        <div class="section-card">
+          <div class="section-head">
+            <div><h3>KYT 充值记录</h3></div>
           </div>
 
           <div class="field-grid">
             <div class="field">
-              <label>搜索币对</label>
-              <input id="pc-filter-key" type="text" placeholder="例如 BTC/USDT" />
+              <label>用户 ID</label>
+              <input id="filter-user" type="text" placeholder="输入用户 ID" />
             </div>
             <div class="field">
-              <label>状态</label>
-              <select id="pc-filter-status">
-                <option value="">全部状态</option>
-                <option value="warn">风险预警</option>
-                <option value="ok">正常</option>
+              <label>订单号</label>
+              <input id="filter-order" type="text" placeholder="输入订单号" />
+            </div>
+            <div class="field">
+              <label>风险等级</label>
+              <select id="filter-risk">
+                <option value="">全部</option>
+                <option value="serious">严重风险</option>
+                <option value="high">高风险</option>
+                <option value="medium">中风险</option>
+                <option value="low">低风险</option>
               </select>
             </div>
             <div class="field">
-              <label>操作</label>
-              <div class="button-group">
-                <button type="button" class="button" id="pc-apply">查询</button>
-                <button type="button" class="button secondary" id="pc-reset">重置</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>币对</th>
-                  <th>最多多方向可亏损额(USDT)</th>
-                  <th>用户未来累计亏损额(USDT)</th>
-                  <th>已ADL减仓次数</th>
-                  <th>ADL盈余总盈亏(USDT)</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="pc-tbody"></tbody>
-            </table>
-          </div>
-
-          <div class="footer-row">
-            <div id="pc-summary">当前展示 0 条币对配置</div>
-            <div class="pagination">
-              <button type="button" class="page-chip" id="pc-prev">上一页</button>
-              <div id="pc-page">第 1 页 / 共 1 页</div>
-              <button type="button" class="page-chip" id="pc-next">下一页</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="config-editor" class="page">
-        <div class="section-card">
-          <div class="section-head">
-            <div>
-              <div class="breadcrumb"><span>后台</span><span>›</span><span>ADL减仓</span><span>›</span><span>币对配置</span><span>›</span><b>配置编辑</b></div>
-              <h3 id="cm-title">ADL减仓配置</h3>
-              <p style="margin:8px 0 0; color:var(--muted); font-size:12px; line-height:1.7;">在独立页面编辑交易对配置。点击保存配置后刷新币对配置列表与顶部数据概览。</p>
-            </div>
-            <div class="button-group">
-              <button type="button" class="button secondary" id="cm-close">返回列表</button>
-            </div>
-          </div>
-
-          <div class="modal-form">
-            <div class="modal-field">
-              <label for="cm-pair">交易对</label>
-              <select id="cm-pair"></select>
-            </div>
-            <div class="modal-field">
-              <label for="cm-max-loss">最多多方向可亏损额(USDT)</label>
-              <input id="cm-max-loss" type="number" min="0" step="1" />
-              <div class="hint">ADL减仓启动时，对应交易对方向（多头）允许的最大亏损额。超过阈值触发 ADL 减仓机制。</div>
-            </div>
-            <div class="modal-field">
-              <label for="cm-future-loss">用户未来累计亏损额(USDT)</label>
-              <input id="cm-future-loss" type="number" step="1" />
-              <div class="hint">用户未来累计亏损额用于风险参考；负数表示亏损。实际系统按平台口径计算，本原型用于交互演示。</div>
-            </div>
-            <div class="modal-field">
-              <label for="cm-long-bankruptcy-offset">多仓用户破产价偏移比例(%)</label>
-              <input id="cm-long-bankruptcy-offset" type="number" min="0" step="0.01" />
-              <div class="hint">用于按市价推导多仓用户破产价。计算口径：多仓用户破产价 = 市价 × (1 - 多仓用户破产价偏移比例)。例如配置 5，则表示按 5% 计算，即多仓用户破产价 = 市价 × (1 - 5%)。</div>
-            </div>
-            <div class="modal-field">
-              <label for="cm-short-bankruptcy-offset">空仓用户破产价偏移比例(%)</label>
-              <input id="cm-short-bankruptcy-offset" type="number" min="0" step="0.01" />
-              <div class="hint">用于按市价推导空仓用户破产价。计算口径：空仓用户破产价 = 市价 × (1 + 空仓用户破产价偏移比例)。例如配置 5，则表示按 5% 计算，即空仓用户破产价 = 市价 × (1 + 5%)。</div>
-            </div>
-            <div class="modal-field">
-              <label>重置用户累计数据</label>
-              <div class="radio-row" id="cm-cycle">
-                <label class="radio"><input type="radio" name="cm-cycle" value="day" checked />日</label>
-                <label class="radio"><input type="radio" name="cm-cycle" value="week" />周</label>
-                <label class="radio"><input type="radio" name="cm-cycle" value="month" />月</label>
-                <label class="radio"><input type="radio" name="cm-cycle" value="total" />总</label>
-              </div>
-              <div class="hint">选择重置周期为 ADL 统计的周期维度，系统可按周期重置累计盈亏与触发次数等统计。</div>
-            </div>
-            <div class="modal-kpis">
-              <div class="kpi">
-                <small>当前风控率</small>
-                <strong id="cm-risk-rate" class="text-danger">--</strong>
-              </div>
-              <div class="kpi">
-                <small>预计收益</small>
-                <strong id="cm-est-profit" class="text-ok">--</strong>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="button secondary" id="cm-reset">重置</button>
-            <button type="button" class="button" id="cm-save">保存配置</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="pair-users" class="page">
-        <div class="section-card">
-          <div class="section-head">
-            <div>
-              <div class="breadcrumb"><span>后台</span><span>›</span><span>ADL减仓</span><span>›</span><b>币对持仓用户</b></div>
-              <h3>币对持仓用户列表</h3>
-            </div>
-            <div class="button-group">
-              <button type="button" class="button secondary" id="pu-back-config">返回币对配置</button>
-            </div>
-          </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label>交易对</label>
-              <select id="pu-filter-pair"></select>
+              <label>审核状态</label>
+              <select id="filter-review">
+                <option value="">全部</option>
+                <option value="auto_reject">自动拒绝</option>
+                <option value="pending">待审核</option>
+                <option value="completed">已完成</option>
+                <option value="rejected">已拒绝</option>
+              </select>
             </div>
             <div class="field">
-              <label>用户ID</label>
-              <input id="pu-filter-user" type="text" placeholder="请输入用户ID" />
+              <label>币种</label>
+              <select id="filter-coin">
+                <option value="">全部</option>
+                <option value="USDT">USDT</option>
+                <option value="BTC">BTC</option>
+              </select>
             </div>
             <div class="field">
-              <label>用户账号</label>
-              <input id="pu-filter-account" type="text" placeholder="请输入用户账号" />
+              <label>开始时间</label>
+              <input id="filter-updated-start" type="datetime-local" step="1" />
+            </div>
+            <div class="field">
+              <label>结束时间</label>
+              <input id="filter-updated-end" type="datetime-local" step="1" />
             </div>
             <div class="field">
               <label>操作</label>
               <div class="button-group">
-                <button type="button" class="button" id="pu-apply">查询</button>
-                <button type="button" class="button secondary" id="pu-reset">重置</button>
+                <button class="button" id="apply-filter">应用</button>
+                <button class="button secondary" id="reset-filter">重置</button>
               </div>
             </div>
           </div>
 
-          <div class="table-wrap">
+          <div class="record-table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>交易对</th>
-                  <th>用户ID</th>
-                  <th>用户账号</th>
-                  <th>持仓方向</th>
-                  <th>持仓数量(USDT)</th>
-                  <th>开仓均价</th>
-                  <th>标记价格</th>
-                  <th>未实现盈亏(USDT)</th>
-                  <th>杠杆</th>
-                  <th>分数</th>
+                  <th>订单号</th>
+                  <th>用户 ID</th>
+                  <th>风险等级</th>
+                  <th>审核状态</th>
                   <th>最后更新时间</th>
+                  <th>原始入金金额</th>
+                  <th>入金控制</th>
+                  <th>到账金额</th>
                   <th>操作</th>
                 </tr>
               </thead>
-              <tbody id="pu-tbody"></tbody>
+              <tbody id="record-tbody"></tbody>
             </table>
           </div>
-
-          <div class="footer-row">
-            <div id="pu-summary">当前展示 0 条持仓用户</div>
-            <div class="pagination">
-              <button type="button" class="page-chip" id="pu-prev">上一页</button>
-              <div id="pu-page">第 1 页 / 共 1 页</div>
-              <button type="button" class="page-chip" id="pu-next">下一页</button>
-            </div>
+          <div class="footer-note" id="record-summary">当前展示 0 笔 KYT 充值记录</div>
+          <div class="pagination">
+            <button class="page-chip" id="prev-page" type="button">上一页</button>
+            <div id="page-summary">第 1 页 / 共 1 页</div>
+            <button class="page-chip" id="next-page" type="button">下一页</button>
           </div>
         </div>
       </section>
 
-      <section id="adl-list" class="page">
+      <section id="change-logs" class="page">
         <div class="section-card">
           <div class="section-head">
-            <div>
-              <div class="breadcrumb"><span>后台</span><span>›</span><span>ADL减仓</span><span>›</span><b>减仓列表</b></div>
-              <h3>ADL减仓列表</h3>
-            </div>
+            <div><h3>当前配置快照</h3></div>
           </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label>交易对</label>
-              <select id="al-filter-pair"></select>
+          <div class="snapshot-grid">
+            <div class="snapshot-card">
+              <small>严重风险</small>
+              <strong style="color: var(--serious);"><span data-policy="serious" data-field="snapshot-range">90 - 100</span></strong>
+              <span>入金控制：<span data-policy="serious" data-field="snapshot-control">拒绝充值入金</span><br />折扣比例：<span data-policy="serious" data-field="snapshot-discount">--</span><br />归集地址：<span data-policy="serious" data-field="snapshot-address">--</span></span>
             </div>
-            <div class="field">
-              <label>用户ID</label>
-              <input id="al-filter-user" type="text" placeholder="请输入用户ID" />
+            <div class="snapshot-card">
+              <small>高风险</small>
+              <strong style="color: var(--high);"><span data-policy="high" data-field="snapshot-range">75 - 89</span></strong>
+              <span>入金控制：<span data-policy="high" data-field="snapshot-control">按折扣入金</span><br />折扣比例：<span data-policy="high" data-field="snapshot-discount">70%</span><br />归集地址：<span data-policy="high" data-field="snapshot-address">TQ8A-78XH-91KR-HR01</span></span>
             </div>
-            <div class="field">
-              <label>操作</label>
-              <div class="button-group">
-                <button type="button" class="button" id="al-apply">查询</button>
-                <button type="button" class="button secondary" id="al-reset">重置</button>
-              </div>
+            <div class="snapshot-card">
+              <small>中风险</small>
+              <strong style="color: var(--medium);"><span data-policy="medium" data-field="snapshot-range">55 - 74</span></strong>
+              <span>入金控制：<span data-policy="medium" data-field="snapshot-control">按折扣入金</span><br />折扣比例：<span data-policy="medium" data-field="snapshot-discount">88%</span><br />归集地址：<span data-policy="medium" data-field="snapshot-address">TQ8A-78XH-91KR-MD88</span></span>
             </div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>交易对</th>
-                  <th>用户ID</th>
-                  <th>用户账号</th>
-                  <th>盈利阈值(%)</th>
-                  <th>减仓比例(%)</th>
-                  <th>减仓次数</th>
-                  <th>30天ADL减仓次数</th>
-                  <th>30天ADL减仓金额(USDT)</th>
-                  <th>减仓已实现盈亏(USDT)</th>
-                  <th>最新减仓时间</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="al-tbody"></tbody>
-            </table>
-          </div>
-
-          <div class="footer-row">
-            <div id="al-summary">当前展示 0 条减仓记录</div>
-            <div class="pagination">
-              <button type="button" class="page-chip" id="al-prev">上一页</button>
-              <div id="al-page">第 1 页 / 共 1 页</div>
-              <button type="button" class="page-chip" id="al-next">下一页</button>
+            <div class="snapshot-card">
+              <small>低风险</small>
+              <strong style="color: var(--low);"><span data-policy="low" data-field="snapshot-range">0 - 54</span></strong>
+              <span>入金控制：<span data-policy="low" data-field="snapshot-control">直接入金</span><br />折扣比例：<span data-policy="low" data-field="snapshot-discount">100%</span><br />归集地址：<span data-policy="low" data-field="snapshot-address">TQ8A-78XH-91KR-LW00</span></span>
             </div>
           </div>
         </div>
-      </section>
 
-      <section id="adl-detail" class="page">
         <div class="section-card">
           <div class="section-head">
-            <div>
-              <div class="breadcrumb"><span>后台</span><span>›</span><span>ADL减仓</span><span>›</span><b>减仓详情</b></div>
-              <h3>ADL减仓详情</h3>
-            </div>
-            <div class="button-group">
-              <button type="button" class="button secondary" id="back-to-list">返回列表</button>
-            </div>
+            <div><h3>配置变更记录</h3></div>
           </div>
-
-          <div class="detail-grid" id="detail-kpis"></div>
-
-          <div class="tabs" role="tablist" aria-label="详情Tab">
-            <button type="button" class="tab active" data-tab="orders">用户减仓订单记录</button>
-            <button type="button" class="tab" data-tab="fills">用户减仓成交记录</button>
-          </div>
-
-          <div class="field-grid" style="margin-top:12px;">
-            <div class="field">
-              <label>日期开始</label>
-              <input id="ad-date-start" type="date" />
+          <div class="log-list">
+            <div class="log-card">
+              <h4>2026-06-12 09:20  高风险折扣比例变更</h4>
+              <p>操作人：风控主管 A。变更字段：高风险折扣比例。变更前：75%。变更后：70%。备注：近期高风险样本回测偏高，下调到账比例。</p>
             </div>
-            <div class="field">
-              <label>日期结束</label>
-              <input id="ad-date-end" type="date" />
+            <div class="log-card">
+              <h4>2026-06-12 09:36  中风险归集地址切换</h4>
+              <p>操作人：资金运营 B。变更字段：中风险归集地址。变更前：TQ8A-78XH-91KR-MD07。变更后：TQ8A-78XH-91KR-MD88。备注：启用新地址。</p>
             </div>
-            <div class="field">
-              <label>操作</label>
-              <div class="button-group">
-                <button type="button" class="button" id="ad-apply">查询</button>
-                <button type="button" class="button secondary" id="ad-reset">重置</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead id="ad-thead"></thead>
-              <tbody id="ad-tbody"></tbody>
-            </table>
-          </div>
-
-          <div class="footer-row">
-            <div id="ad-summary">当前展示 0 条记录</div>
-            <div class="pagination">
-              <button type="button" class="page-chip" id="ad-prev">上一页</button>
-              <div id="ad-page">第 1 页 / 共 1 页</div>
-              <button type="button" class="page-chip" id="ad-next">下一页</button>
+            <div class="log-card">
+              <h4>2026-06-12 10:05  严重风险阈值调整</h4>
+              <p>操作人：风控主管 A。变更字段：严重风险分数区间。变更前：92 - 100。变更后：90 - 100。备注：扩大量化拦截范围。</p>
             </div>
           </div>
         </div>
@@ -912,664 +1073,418 @@
   </div>
 
   <button type="button" class="button secondary spec-toggle" id="spec-toggle">展开口径定义文档</button>
+
   <aside class="spec-sidebar collapsed" id="spec-sidebar">
     <h3>口径说明</h3>
     <div class="spec-card">
       <strong>全局口径定义</strong>
-      <span>本原型所有计数字段（总数、次数、页码等）统一展示为整数；金额字段统一展示为 USDT，展示最多 8 位小数，末尾为 0 的小数位不展示；未实现盈亏字段统一展示最多 8 位小数，末尾为 0 的小数位不展示；时间展示格式为 YYYY-MM-DD HH:mm:ss。页面中涉及交易对价格、持仓数量、持仓方向、开仓均价、标记价格、当前价等展示字段，均以后端币对配置及后端实时返回结果为准，原型仅作交互与页面呈现演示。</span>
+      <span>全局展示规则统一如下：第一，笔数、次数、用户数、记录数等计数字段统一展示为整数；第二，数据概览中的折合 U 金额统一展示为整数；第三，KYT 充值记录中的原始入金金额与到账金额，因可能存在 BTC 等高精度币种，最多支持展示 8 位小数；第四，金额小数部分若末尾连续为 0，则按实际有效位截取显示，不保留无意义的 0；若小数点后全部为 0，则只展示整数部分，例如 18.00000000 展示为 18，18.23000000 展示为 18.23。</span>
     </div>
-    <div class="spec-card">
-      <strong>顶部统计维度（日 / 周 / 月 / 总）</strong>
-      <span>页面顶部的“日 / 周 / 月 / 总”为全局统计维度切换项，默认选中“日”。日表示按当日自然日口径汇总当前页面顶部数据概览；周表示按当前自然周口径汇总；月表示按当前自然月口径汇总；总表示按系统当前可统计全量周期汇总。该切换项统一作用于顶部数据概览卡片，不直接改变列表字段结构；列表是否联动统计维度，以各列表自身筛选与排序规则为准。</span>
+    <div class="spec-page active" data-spec-page="kyt-config">
+      <div class="spec-card">
+        <strong>数据概览-统计维度</strong>
+        <span>顶部数据概览支持日、周、月、总四种统计维度，默认显示日数据。切换统计维度后，仅影响顶部数据概览的统计口径，不改变下方配置表与充值记录的字段结构。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-严重风险</strong>
+        <span>展示当前统计维度内命中严重风险的充值笔数与折合金额。折合金额统一折合为 U；充值币种为 USDT 时按 1:1 折合，其他币种按充值发生时间当时对应现货 USDT 币对价格折合。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-高风险</strong>
+        <span>展示当前统计维度内命中高风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-中风险</strong>
+        <span>展示当前统计维度内命中中风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>数据概览-低风险</strong>
+        <span>展示当前统计维度内命中低风险的充值笔数与折合金额。折合规则与严重风险一致，金额统一展示为折合 U 金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>KYT 风险列表图</strong>
+        <span>列表固定展示严重风险、高风险、中风险、低风险四条配置，不允许新增或删除风险等级。每条配置展示风险等级、最低分、最高分、入金控制、折扣比例、归集地址、配置按钮。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险等级</strong>
+        <span>风险等级固定为严重风险、高风险、中风险、低风险四档。命中规则按风险分数落入对应最低分与最高分区间判断，区间边界为闭区间，包含最低分与最高分。</span>
+      </div>
+      <div class="spec-card">
+        <strong>最低分 / 最高分</strong>
+        <span>最低分与最高分为每个风险等级的命中分数区间。开发按分数区间进行命中判断；测试按输入分数是否落入对应区间验证结果。若最低分大于最高分，页面确认时自动交换，保证区间有效。</span>
+      </div>
+      <div class="spec-card">
+        <strong>入金控制</strong>
+        <span>入金控制仅允许三种取值：拒绝充值入金、按折扣入金、直接入金。命中严重风险时可配置为拒绝充值入金；命中高风险或中风险时可配置为按折扣入金；命中低风险时可配置为直接入金。</span>
+      </div>
+      <div class="spec-card">
+        <strong>折扣比例</strong>
+        <span>仅当入金控制选择按折扣入金时展示并填写折扣比例，折扣比例取值范围为 0 到 100 的整数。到账金额按原始入金金额乘以折扣比例后计算，展示时金额按页面现有精度显示。</span>
+      </div>
+      <div class="spec-card">
+        <strong>归集地址</strong>
+        <span>仅当入金控制为按折扣入金或直接入金时展示归集地址；入金控制为拒绝充值入金时归集地址固定显示为 --。归集地址为命中该风险等级后资金归集到的平台地址。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置按钮</strong>
+        <span>点击配置按钮后在当前页打开配置弹窗，不跳转页面。弹窗字段与列表字段一一对应，包含最低分、最高分、入金控制、折扣比例、归集地址、谷歌验证码、确认、取消。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置弹窗-字段显示</strong>
+        <span>配置弹窗固定展示最低分输入框、最高分输入框、入金控制下拉框、谷歌验证码输入框、确认按钮、取消按钮。入金控制选择按折扣入金时，展示折扣比例输入框和归集地址输入框；入金控制选择直接入金时，仅展示归集地址输入框；入金控制选择拒绝充值入金时，不展示折扣比例输入框和归集地址输入框。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置弹窗-相关操作</strong>
+        <span>点击配置按钮后打开当前风险等级的配置弹窗；点击取消关闭弹窗且不保存修改；点击谷歌验证码按钮仅用于获取并填写验证码；点击确认时对当前输入内容进行校验，校验通过后才保存并刷新风险列表图、当前配置快照、KYT 充值记录的入金控制结果。</span>
+      </div>
+      <div class="spec-card">
+        <strong>配置弹窗-区间校验</strong>
+        <span>最低分与最高分共同组成当前风险等级的命中区间，区间边界为闭区间，包含最低分与最高分。点击确认时，系统先校验最低分与最高分形成有效区间，再校验该区间不得与其他三个风险等级的分数区间发生重叠；若存在任意重叠，则不允许保存，并提示当前区间与其他风险等级区间重叠。</span>
+      </div>
     </div>
-
-    <div class="spec-page active" data-spec-page="pair-config">
+    <div class="spec-page" data-spec-page="deposit-records">
       <div class="spec-card">
-        <strong>币对配置</strong>
-        <span>展示 ADL 盈利减仓的交易对级配置，用于定义触发阈值、统计周期与风控预警状态。列表支持按币对关键字和状态筛选，并分页展示。</span>
+        <strong>KYT 充值记录</strong>
+        <span>列表展示全部风险等级的充值记录，包含严重风险、高风险、中风险、低风险。每条记录固定展示订单号、用户 ID、风险等级、审核状态、最后更新时间、原始入金金额、入金控制、到账金额、查看详情。</span>
       </div>
       <div class="spec-card">
-        <strong>最多多方向可亏损额(USDT)</strong>
-        <span>该交易对触发 ADL 盈利减仓时，多方向允许承受的最大可亏损额阈值。当系统识别到多方向风险超过阈值时，触发对应减仓处置。</span>
+        <strong>排序规则</strong>
+        <span>KYT 充值记录默认按最后更新时间倒序排序；若最后更新时间相同，则按用户 ID 倒序排序。开发按该排序规则返回列表；测试按时间优先、用户 ID 次优先核对排序结果。</span>
       </div>
       <div class="spec-card">
-        <strong>用户未来累计亏损额(USDT)</strong>
-        <span>用于描述该交易对下用户未来累计盈亏的风险参考值；负数表示亏损，数值越小代表风险越高。实际系统可用平台规则计算并落库，本原型仅作展示与筛选演示。</span>
+        <strong>筛选-用户 ID</strong>
+        <span>按用户唯一标识筛选充值记录，支持模糊匹配。输入内容命中用户 ID 字符串即返回该用户相关记录。</span>
       </div>
       <div class="spec-card">
-        <strong>状态</strong>
-        <span>状态取值固定为风险预警/正常。风险预警用于提示该交易对当前风险接近触发线或已发生减仓事件；正常表示近期风险低于预警阈值。</span>
+        <strong>筛选-订单号</strong>
+        <span>按充值订单号筛选记录，支持模糊匹配。输入内容命中订单号字符串即返回对应记录。</span>
       </div>
       <div class="spec-card">
-        <strong>配置编辑入口</strong>
-        <span>点击“添加币对配置”或列表“编辑”进入独立配置编辑页面，不再使用弹窗。编辑页支持选择交易对、设置最多多方向可亏损额、设置用户未来累计亏损额、设置多仓用户破产价偏移比例、设置空仓用户破产价偏移比例、选择重置周期（日/周/月/总），并展示当前风控率与预计收益等参考指标。</span>
+        <strong>筛选-风险等级</strong>
+        <span>风险等级筛选支持全部、严重风险、高风险、中风险、低风险。选择某一风险等级后，仅展示命中该风险等级的充值记录。</span>
       </div>
       <div class="spec-card">
-        <strong>多仓用户破产价偏移比例(%) / 空仓用户破产价偏移比例(%)</strong>
-        <span>两项配置均用于按触发时市场价格推导用户破产价。多仓用户破产价 = 市价 × (1 - 多仓用户破产价偏移比例)；空仓用户破产价 = 市价 × (1 + 空仓用户破产价偏移比例)。配置值按百分比理解，例如输入 5 表示 5%，实际计算时换算为 0.05。</span>
+        <strong>筛选-审核状态</strong>
+        <span>审核状态筛选支持全部、自动拒绝、待审核、已完成、已拒绝。选择某一审核状态后，仅展示处于该审核状态的充值记录。</span>
       </div>
       <div class="spec-card">
-        <strong>状态点击结果</strong>
-        <span>币对配置列表中的“风险预警”为可点击结果标签。点击后打开结果弹窗，展示该币对的最多多方向可亏损额、用户未来累计亏损额、风险比率、当前状态、30天已ADL次数以及状态判定公式，便于核对预警来源；“正常”状态仅展示结果标签，不弹出结果说明。</span>
+        <strong>筛选-币种</strong>
+        <span>币种筛选按充值币种过滤记录。当前原型展示 USDT、BTC 两种币种，开发时按系统支持的充值币种返回。</span>
+      </div>
+      <div class="spec-card">
+        <strong>筛选-开始时间 / 结束时间</strong>
+        <span>开始时间与结束时间按最后更新时间进行区间筛选，精度到秒。开始时间表示大于等于该时间的记录，结束时间表示小于等于该时间的记录。</span>
+      </div>
+      <div class="spec-card">
+        <strong>订单号</strong>
+        <span>订单号为平台内部唯一充值记录编号，用于唯一定位一笔充值记录。测试可通过订单号直接核对详情弹窗与列表是否一致。</span>
+      </div>
+      <div class="spec-card">
+        <strong>用户 ID</strong>
+        <span>用户 ID 为充值发起用户在平台内的唯一用户标识，一条充值记录只对应一个用户 ID。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险等级</strong>
+        <span>风险等级为该笔充值根据 KYT 风险分数命中的最终风险档位，取值固定为严重风险、高风险、中风险、低风险。</span>
+      </div>
+      <div class="spec-card">
+        <strong>风险分数</strong>
+        <span>风险分数为该笔充值最终采用的 KYT 风险分数。当前列表不展示风险分数，风险分数仅在详情弹窗中展示；测试按分数是否落入当前风险等级区间核验。</span>
+      </div>
+      <div class="spec-card">
+        <strong>审核状态</strong>
+        <span>审核状态为该笔充值当前处置进度，取值固定为自动拒绝、待审核、已完成、已拒绝。自动拒绝表示系统根据策略直接拒绝充值入金；待审核表示命中按折扣入金且尚未人工确认到账；已完成表示该笔充值已完成入金处置（直接入金或人工审核通过后按折扣入金）；已拒绝表示人工审核不通过并按拒绝充值入金流程处置。</span>
+      </div>
+      <div class="spec-card">
+        <strong>最后更新时间</strong>
+        <span>最后更新时间为该笔充值记录最近一次风险识别或处置结果更新的时间，列表展示精度到秒，格式为 YYYY-MM-DD HH:mm:ss。</span>
+      </div>
+      <div class="spec-card">
+        <strong>原始入金金额</strong>
+        <span>原始入金金额为用户链上实际充值的原始币种金额，列表展示时保留原始数值和币种，不做折合展示。</span>
+      </div>
+      <div class="spec-card">
+        <strong>入金控制</strong>
+        <span>入金控制展示该笔充值命中当前风险等级后实际执行的处置结果，取值仅为拒绝充值入金、按折扣入金、直接入金。</span>
+      </div>
+      <div class="spec-card">
+        <strong>到账金额</strong>
+        <span>到账金额为根据入金控制计算后的实际到账币种金额。拒绝充值入金时到账金额为 0；按折扣入金时到账金额按原始入金金额乘折扣比例计算；直接入金时到账金额等于原始入金金额。</span>
+      </div>
+      <div class="spec-card">
+        <strong>查看详情</strong>
+        <span>点击查看详情后打开当前页弹窗，展示该笔充值的完整链上信息与各服务商返回结果，不跳转页面。</span>
+      </div>
+      <div class="spec-card">
+        <strong>列表字段-换行规则</strong>
+        <span>KYT 充值记录列表字段为防止影响布局，按以下规则展示：订单号最多显示 24 个字符，用户 ID 最多显示 16 个字符，风险等级最多显示 8 个字符，审核状态最多显示 8 个字符，最后更新时间最多显示 19 个字符，原始入金金额最多显示 18 个字符，入金控制最多显示 12 个字符，到账金额最多显示 18 个字符。任一字段超过上述长度时自动换行显示；连续英文、数字、地址类无空格内容按任意位置断开换行。</span>
+      </div>
+      <div class="spec-card">
+        <strong>详情弹窗</strong>
+        <span>详情弹窗固定展示订单号、充值 HASH、用户 ID、风险等级、风险分数、最后更新时间、FROM 地址、收款地址、原始入金金额、入金控制、折扣比例、到账金额、归集地址，以及各服务商返回的 KYT 分数与原因。</span>
+      </div>
+      <div class="spec-card">
+        <strong>详情弹窗-人工审核</strong>
+        <span>当入金控制为按折扣入金且到账金额为 0 时，详情弹窗展示人工审核区域。审核结果支持审核通过与审核不通过；选择审核通过时展示折扣比例输入框，默认取该风险等级配置的折扣比例，允许人工修改；选择审核不通过时不展示折扣比例输入框，并按拒绝充值入金流程处置。点击确认前必须先通过谷歌验证码；审核不通过必须填写备注，否则不允许确认。</span>
+      </div>
+      <div class="spec-card">
+        <strong>详情弹窗-换行规则</strong>
+        <span>充值记录详情中的字段值为防止影响布局，单行展示超过 24 个中文字符时自动换行显示；连续英文、数字、地址、HASH 等无空格内容超过单行宽度时，按任意位置断开换行显示。换行仅影响展示样式，不影响字段原始值。</span>
       </div>
       <div class="spec-card">
         <strong>分页</strong>
-        <span>当币对配置总数大于 8 条时分页展示，每页固定 8 条，支持上一页和下一页切换。</span>
+        <span>当 KYT 充值记录总数大于 10 笔时分页展示，每页固定展示 10 笔，支持上一页和下一页切换。</span>
       </div>
     </div>
-
-    <div class="spec-page" data-spec-page="config-editor">
+    <div class="spec-page" data-spec-page="change-logs">
       <div class="spec-card">
-        <strong>配置编辑页面</strong>
-        <span>点击“添加币对配置”或列表“编辑”进入独立配置编辑页面，不再使用弹窗。页面展示完整配置字段、风险参考说明、风控率与预计收益参考值，适合长字段与多参数场景录入。</span>
+        <strong>当前配置快照-严重风险</strong>
+        <span>展示严重风险当前生效的分数区间、入金控制、折扣比例、归集地址。严重风险默认拒绝充值入金，折扣比例与归集地址显示为 --。</span>
       </div>
       <div class="spec-card">
-        <strong>页面价格与数量来源</strong>
-        <span>配置编辑页中涉及交易对、市价推导、破产价偏移比例等参数，均以后端币对配置为准；后续页面展示的持仓数量、开仓均价、标记价格、当前价及相关价格结果，均以后端返回的该币对配置与实时数据为准，前端不自行重算基础行情口径。</span>
+        <strong>当前配置快照-高风险</strong>
+        <span>展示高风险当前生效的分数区间、入金控制、折扣比例、归集地址。高风险命中后默认按折扣入金，并展示当前生效折扣比例与高风险归集地址。</span>
       </div>
       <div class="spec-card">
-        <strong>多仓用户破产价偏移比例(%) / 空仓用户破产价偏移比例(%)</strong>
-        <span>两项配置均用于按触发时市场价格推导用户破产价。多仓用户破产价 = 市价 × (1 - 多仓用户破产价偏移比例)；空仓用户破产价 = 市价 × (1 + 空仓用户破产价偏移比例)。配置值按百分比理解，例如输入 5 表示 5%，实际计算时换算为 0.05。</span>
+        <strong>当前配置快照-中风险</strong>
+        <span>展示中风险当前生效的分数区间、入金控制、折扣比例、归集地址。中风险命中后默认按折扣入金，并展示当前生效折扣比例与中风险归集地址。</span>
       </div>
       <div class="spec-card">
-        <strong>保存与返回</strong>
-        <span>点击“保存配置”后回写当前交易对配置，并刷新币对配置列表与顶部数据概览；点击“返回列表”返回币对配置列表页，不保存未确认修改。</span>
-      </div>
-    </div>
-
-    <div class="spec-page" data-spec-page="pair-users">
-      <div class="spec-card">
-        <strong>币对持仓用户列表</strong>
-        <span>展示某个交易对下当前存在持仓的用户列表，用于快速查看持仓风险敞口。支持按交易对、用户ID、用户账号筛选，并分页展示。列表排序口径与 ADL 减仓列表保持一致，按全局综合排序值从高到低排序。</span>
+        <strong>当前配置快照-低风险</strong>
+        <span>展示低风险当前生效的分数区间、入金控制、折扣比例、归集地址。低风险命中后默认直接入金，折扣比例固定为 100%。</span>
       </div>
       <div class="spec-card">
-        <strong>持仓数量(USDT)</strong>
-        <span>用户在该交易对下的持仓名义价值（按 USDT 计价）。该字段以后端币对配置和后端持仓结果为准，前端仅按接口返回结果展示，不自行调整基础持仓数量口径。</span>
+        <strong>配置变更记录</strong>
+        <span>配置变更记录展示每次配置修改后的变更日志，至少包含变更时间、操作人、变更字段、变更前值、变更后值、备注。当前页面示例展示折扣比例、归集地址、分数区间三类变更。</span>
       </div>
       <div class="spec-card">
-        <strong>开仓均价 / 标记价格</strong>
-        <span>币对持仓用户列表中的开仓均价、标记价格以及相关详情页中的当前价，均以后端该币对配置和实时行情返回结果为准。前端不以本地演示数据重新推导真实行情，仅负责展示与交互联动。</span>
-      </div>
-      <div class="spec-card">
-        <strong>未实现盈亏(USDT)</strong>
-        <span>持仓的当前未实现盈亏（按 USDT 计价）。正数表示盈利，负数表示亏损。展示最多保留 8 位小数，末尾为 0 的小数位不展示；该字段以后端返回结果为准。</span>
-      </div>
-      <div class="spec-card">
-        <strong>分数与排序</strong>
-        <span>币对持仓用户列表与 ADL 减仓列表使用同一套全局排序公式。公式如下：盈亏百分比 = 未实现收益 ÷ 绝对值(名目仓位)；有效杠杆 = 绝对值(名目仓位) ÷ (钱包余额 + 未实现收益)，当钱包余额 + 未实现收益小于等于 0 时分母按 1 处理；若盈亏百分比大于等于 0，则基础排序值 = 盈亏百分比 × 有效杠杆；若盈亏百分比小于 0，则基础排序值 = 盈亏百分比 ÷ 有效杠杆；次数惩罚分位值 = (用户总数 - 30天ADL减仓次数排名 + 1) ÷ 用户总数；金额惩罚分位值 = (用户总数 - 30天ADL减仓金额排名 + 1) ÷ 用户总数；公平调节系数 = 1 + 0.35 × 次数惩罚分位值 + 0.15 × 金额惩罚分位值；当基础排序值大于等于 0 时，综合排序值 = 基础排序值 ÷ 公平调节系数；当基础排序值小于 0 时，综合排序值 = 基础排序值 × 公平调节系数。示例：若当前用户总数为 10，该用户 30天ADL减仓次数排名第 1、30天ADL减仓金额排名第 1，则次数惩罚分位值 = (10 - 1 + 1) ÷ 10 = 1，金额惩罚分位值 = (10 - 1 + 1) ÷ 10 = 1，公平调节系数 = 1 + 0.35 × 1 + 0.15 × 1 = 1.5；若该用户基础排序值 = 0.40645161，则综合排序值 = 0.40645161 ÷ 1.5 = 0.27096774。以上三个值的来源分别是：次数惩罚分位值来自 30 天 ADL 次数在全体用户中的排名，金额惩罚分位值来自 30 天 ADL 金额在全体用户中的排名，公平调节系数来自前两个分位值代入公式后的结果。影响说明：30天ADL减仓次数越多、30天ADL减仓金额越大，说明该用户近 30 天已经承担了更多 ADL，对应排名会更靠前，次数惩罚分位值和金额惩罚分位值会更大，进而让公平调节系数更大，排序更有可能向后延。对基础排序值为正的用户，公平调节系数越大，综合排序值越小，越不容易继续排在前面被优先 ADL；对基础排序值为负的用户，公平调节系数越大，综合排序值越负，同样会被进一步后置。列表中的分数字段即综合排序值，展示最多 8 位小数；点击分数可查看相关计算参数与计算过程；页面按分数从高到低排序，若分数相同，则按最后更新时间倒序，再按用户ID倒序。</span>
-      </div>
-      <div class="spec-card">
-        <strong>操作-减仓详情</strong>
-        <span>点击“减仓详情”跳转至减仓详情页，默认打开订单记录 Tab，并展示该用户在该交易对下的减仓明细；若该用户暂无减仓记录，则展示空列表。</span>
-      </div>
-      <div class="spec-card">
-        <strong>操作-手动ADL减仓</strong>
-        <span>点击“手动ADL减仓”在当前页打开弹窗。弹窗字段包含破产价、当前价、持仓数量、持仓方向、持仓均价、平仓数量、平仓后用户盈亏显示、谷歌验证码、确认、取消。破产价为可输入字段，其余展示字段按当前持仓数据回填；其中当前价、持仓数量、持仓方向、持仓均价以后端币对配置与后端持仓结果为准。平仓后用户盈亏显示按破产价、平仓数量、持仓方向、持仓均价实时联动计算；确认后更新持仓用户列表、减仓列表和减仓详情演示数据。</span>
-      </div>
-      <div class="spec-card">
-        <strong>分页</strong>
-        <span>当币对持仓用户总数大于 8 条时分页展示，每页固定 8 条，支持上一页和下一页切换。</span>
-      </div>
-    </div>
-
-    <div class="spec-page" data-spec-page="adl-list">
-      <div class="spec-card">
-        <strong>减仓列表</strong>
-        <span>展示发生过 ADL 盈利减仓的用户维度汇总列表。支持按交易对与用户ID筛选，支持分页展示。</span>
-      </div>
-      <div class="spec-card">
-        <strong>全局排序规则</strong>
-        <span>ADL 减仓用户列表按全局候选用户池统一计算排序，页面筛选仅影响展示结果，不改变用户在当前排序中的全局位置。基础排序值计算规则为：盈亏百分比 = 未实现收益 ÷ 绝对值(名目仓位)；有效杠杆 = 绝对值(名目仓位) ÷ (钱包余额 + 未实现收益)，当钱包余额 + 未实现收益小于等于 0 时，分母按 1 处理；若盈亏百分比大于等于 0，则基础排序值 = 盈亏百分比 × 有效杠杆；若盈亏百分比小于 0，则基础排序值 = 盈亏百分比 ÷ 有效杠杆；杠杆盈亏分位数 = 用户排名 ÷ 用户总数，其中用户排名按基础排序值从高到低排序，排名 1 为最高优先级。</span>
-      </div>
-      <div class="spec-card">
-        <strong>30天ADL减仓次数 / 30天ADL减仓金额</strong>
-        <span>30天ADL减仓次数指当前时间向前滚动 30 个自然日内该用户累计被 ADL 的次数；30天ADL减仓金额指同一时间范围内该用户累计被 ADL 的减仓金额绝对值总和，单位为 USDT。</span>
-      </div>
-      <div class="spec-card">
-        <strong>公平修正公式</strong>
-        <span>为避免短期内同一批高盈利用户被重复减仓过多次，列表在基础排序值之上追加公平修正。次数惩罚分位值 = (用户总数 - 30天ADL减仓次数排名 + 1) ÷ 用户总数，其中次数排名按 30 天 ADL 减仓次数从高到低排序；金额惩罚分位值 = (用户总数 - 30天ADL减仓金额排名 + 1) ÷ 用户总数，其中金额排名按 30 天 ADL 减仓金额从高到低排序。公平调节系数 = 1 + 0.35 × 次数惩罚分位值 + 0.15 × 金额惩罚分位值。最终综合排序值：当基础排序值大于等于 0 时，综合排序值 = 基础排序值 ÷ 公平调节系数；当基础排序值小于 0 时，综合排序值 = 基础排序值 × 公平调节系数。示例：若用户总数为 10，某用户 30天ADL减仓次数排名第 1，次数惩罚分位值 = 1；30天ADL减仓金额排名第 1，金额惩罚分位值 = 1；则公平调节系数 = 1 + 0.35 × 1 + 0.15 × 1 = 1.5。若该用户基础排序值为 0.40645161，则综合排序值 = 0.40645161 ÷ 1.5 = 0.27096774。需要明确的是：次数越多、金额越大，对应的分位值越大，公平调节系数也越大，排序就越有可能往后延；也就是平台会优先降低这些近 30 天已被频繁 ADL、或累计承担较大 ADL 金额用户的再次触发优先级。页面最终按综合排序值从高到低排序；若综合排序值相同，则按最新减仓时间倒序，再按用户ID倒序。次数权重大于金额权重，是为了优先减少同一用户在短期内被重复 ADL 的概率；金额仅作次级修正，避免大仓位用户因名义仓位更大而被过度惩罚。点击列表中的分数，可查看该用户的名目仓位、未实现收益、钱包余额、盈亏百分比、有效杠杆、次数分位值、金额分位值、公平调节系数与最终综合排序值。</span>
-      </div>
-      <div class="spec-card">
-        <strong>盈利阈值(%)</strong>
-        <span>触发盈利减仓的盈利率阈值，达到阈值后触发自动减仓处置。展示为百分比整数。</span>
-      </div>
-      <div class="spec-card">
-        <strong>减仓比例(%)</strong>
-        <span>每次触发减仓时对持仓进行的减仓比例，展示为百分比整数。</span>
-      </div>
-      <div class="spec-card">
-        <strong>减仓已实现盈亏(USDT)</strong>
-        <span>该用户在该交易对下因 ADL 减仓产生的累计已实现盈亏，正数表示盈利，负数表示亏损。</span>
-      </div>
-      <div class="spec-card">
-        <strong>跳转到详情</strong>
-        <span>点击“订单记录/成交记录”进入减仓详情页，默认打开对应 Tab，并显示该用户在该交易对下的明细记录。</span>
-      </div>
-      <div class="spec-card">
-        <strong>分页</strong>
-        <span>当减仓列表总数大于 8 条时分页展示，每页固定 8 条，支持上一页和下一页切换。</span>
-      </div>
-    </div>
-
-    <div class="spec-page" data-spec-page="adl-detail">
-      <div class="spec-card">
-        <strong>减仓详情</strong>
-        <span>详情页顶部展示用户减仓信息汇总（交易对、用户ID、用户账号、盈利阈值、减仓比例、减仓次数、累计已实现盈亏、最新减仓时间）。下方通过 Tab 切换展示订单记录与成交记录，并支持按日期区间筛选。</span>
-      </div>
-      <div class="spec-card">
-        <strong>订单记录</strong>
-        <span>展示每笔减仓订单的关键字段：减仓时间、开仓方向、减仓数量(USDT)、减仓时实时价格、订单成交均价、减仓盈亏(USDT)、减仓后盈利率(%)、订单状态。其中减仓时实时价格、订单成交均价、减仓数量以后端币对配置与订单返回结果为准；涉及盈亏金额展示时，最多保留 8 位小数，末尾为 0 的小数位不展示。</span>
-      </div>
-      <div class="spec-card">
-        <strong>成交记录</strong>
-        <span>展示订单的成交明细：成交ID、订单ID、交易对、成交时间、成交数量(USDT)、成交价格、成交金额(USDT)、手续费(USDT)、成交盈亏(USDT)。其中成交价格、成交数量、成交金额以后端成交回报为准；涉及盈亏与金额字段时，最多保留 8 位小数，末尾为 0 的小数位不展示。</span>
-      </div>
-      <div class="spec-card">
-        <strong>日期筛选</strong>
-        <span>日期开始与日期结束按明细记录的发生日期筛选；开始日期为大于等于，结束日期为小于等于。若未选择日期则默认不过滤。</span>
-      </div>
-      <div class="spec-card">
-        <strong>分页</strong>
-        <span>当详情明细记录总数大于 8 条时分页展示，每页固定 8 条，支持上一页和下一页切换。</span>
+        <strong>变更记录-换行规则</strong>
+        <span>配置变更记录页为防止影响布局，单行展示最多显示 24 个中文字符；超过 24 个中文字符时自动换行显示。连续英文、数字、地址类无空格内容超过单行宽度时，按任意位置断开换行显示。该规则适用于变更时间后的标题描述、变更详情、备注等展示内容。</span>
       </div>
     </div>
   </aside>
 
-  <div class="modal" id="status-result-modal">
-    <div class="modal-panel">
-      <div class="modal-head">
+  <div class="config-modal" id="config-modal">
+    <div class="config-modal__panel">
+      <div class="config-modal__head">
         <div>
-          <h4 id="srm-title">风险预警结果</h4>
-          <p>展示该币对当前状态的计算结果与判定说明，便于业务、开发和测试核对预警来源。</p>
+          <h4 id="modal-title">风险等级配置</h4>
+          <p id="modal-desc">当前为配置弹窗，修改后点击确认，仅在当前页演示配置结果。</p>
         </div>
-        <button type="button" class="button secondary" id="srm-close">关闭</button>
       </div>
       <div class="modal-form">
-        <div class="modal-grid" id="srm-grid"></div>
-        <div class="formula-box" id="srm-formula"></div>
+        <div class="modal-form__grid">
+          <div class="modal-field">
+            <label for="modal-min-score">最低分</label>
+            <input id="modal-min-score" type="number" />
+          </div>
+          <div class="modal-field">
+            <label for="modal-max-score">最高分</label>
+            <input id="modal-max-score" type="number" />
+          </div>
+          <div class="modal-field">
+            <label for="modal-control">入金控制</label>
+            <select id="modal-control">
+              <option value="direct" selected>直接入金</option>
+              <option value="discount">按折扣入金</option>
+              <option value="reject">拒绝充值入金</option>
+            </select>
+          </div>
+          <div class="modal-field" id="modal-discount-wrap">
+            <label for="modal-discount">折扣比例</label>
+            <input id="modal-discount" type="number" min="0" max="100" />
+          </div>
+          <div class="modal-field modal-field--full" id="modal-address-wrap">
+            <label for="modal-address">归集地址</label>
+            <input id="modal-address" type="text" />
+          </div>
+          <div class="modal-field modal-field--full">
+            <label for="modal-google-code">谷歌验证码</label>
+            <div class="modal-inline">
+              <input id="modal-google-code" type="text" placeholder="请输入谷歌验证码" />
+              <button type="button" class="button secondary" id="modal-google-btn">谷歌验证码</button>
+            </div>
+          </div>
+        </div>
       </div>
+      <div class="modal-error" id="modal-error"></div>
       <div class="modal-actions">
-        <button type="button" class="button secondary" id="srm-cancel">关闭</button>
+        <button type="button" class="button secondary" id="modal-cancel">取消</button>
+        <button type="button" class="button" id="modal-confirm">确认</button>
       </div>
     </div>
   </div>
 
-  <div class="modal" id="manual-adl-modal">
-    <div class="modal-panel">
-      <div class="modal-head">
+  <div class="record-detail-modal" id="record-detail-modal">
+    <div class="record-detail-modal__panel">
+      <div class="config-modal__head">
         <div>
-          <h4 id="mam-title">手动ADL减仓</h4>
-          <p>在当前页对持仓用户发起手动 ADL 减仓。确认后同步刷新持仓用户列表、减仓列表和对应详情页演示数据。</p>
+          <h4>充值记录详情</h4>
+          <p>点击列表中的“查看详情”后，在当前页弹窗展示该笔 KYT 充值记录详情。</p>
         </div>
-        <button type="button" class="button secondary" id="mam-close">关闭</button>
+        <button type="button" class="button secondary" id="record-detail-close">关闭</button>
       </div>
-
-      <div class="modal-form">
-        <div class="modal-grid">
-          <div class="modal-field">
-            <label for="mam-bankruptcy">破产价</label>
-            <input id="mam-bankruptcy" type="number" min="0" step="0.01" />
+      <div class="desc-list" id="record-detail-content"></div>
+      <div class="modal-form" id="record-review-form" style="display:none;">
+        <div class="modal-form__grid">
+          <div class="modal-field modal-field--full">
+            <label>人工审核</label>
+            <div class="modal-inline" id="record-review-decision">
+              <label class="modal-radio"><input type="radio" name="review-decision" value="approve" checked />审核通过</label>
+              <label class="modal-radio"><input type="radio" name="review-decision" value="reject" />审核不通过</label>
+            </div>
           </div>
-          <div class="modal-field">
-            <label for="mam-current-price">当前价</label>
-            <input id="mam-current-price" type="text" readonly />
+          <div class="modal-field" id="record-review-discount-wrap">
+            <label for="record-review-discount">折扣比例</label>
+            <input id="record-review-discount" type="number" min="0" max="100" />
           </div>
-        </div>
-        <div class="modal-grid">
-          <div class="modal-field">
-            <label for="mam-position-qty">持仓数量</label>
-            <input id="mam-position-qty" type="text" readonly />
+          <div class="modal-field modal-field--full">
+            <label for="record-review-remark">备注</label>
+            <textarea id="record-review-remark" rows="3" placeholder="审核不通过必须填写备注"></textarea>
           </div>
-          <div class="modal-field">
-            <label for="mam-position-side">持仓方向</label>
-            <input id="mam-position-side" type="text" readonly />
-          </div>
-        </div>
-        <div class="modal-grid">
-          <div class="modal-field">
-            <label for="mam-entry-price">持仓均价</label>
-            <input id="mam-entry-price" type="text" readonly />
-          </div>
-          <div class="modal-field">
-            <label for="mam-close-qty">平仓数量</label>
-            <input id="mam-close-qty" type="number" min="0" step="0.01" />
+          <div class="modal-field modal-field--full">
+            <label for="record-review-google-code">谷歌验证码</label>
+            <div class="modal-inline">
+              <input id="record-review-google-code" type="text" placeholder="请输入谷歌验证码" />
+              <button type="button" class="button secondary" id="record-review-google-btn">谷歌验证码</button>
+            </div>
           </div>
         </div>
-        <div class="hint">平仓数量默认按 USDT 口径输入，不能大于当前持仓数量。平仓后用户盈亏显示按持仓方向计算：多仓按（破产价 - 持仓均价）÷ 持仓均价 × 平仓数量计算，空仓按（持仓均价 - 破产价）÷ 持仓均价 × 平仓数量计算。</div>
-        <div class="modal-field">
-          <label for="mam-after-pnl">平仓后用户盈亏显示</label>
-          <input id="mam-after-pnl" type="text" readonly />
+        <div class="modal-error" id="record-review-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="button secondary" id="record-review-cancel">取消</button>
+          <button type="button" class="button" id="record-review-confirm">确认</button>
         </div>
-        <div class="modal-field">
-          <label for="mam-google-code">谷歌验证码</label>
-          <div class="inline-input">
-            <input id="mam-google-code" type="text" inputmode="numeric" placeholder="请输入谷歌验证码" />
-            <button type="button" class="button secondary" id="mam-google-fill">获取验证码</button>
-          </div>
-        </div>
-        <div class="error-text" id="mam-error"></div>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="button secondary" id="mam-cancel">取消</button>
-        <button type="button" class="button" id="mam-confirm">确认</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="score-detail-modal">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <div>
-          <h4 id="sdm-title">分数计算详情</h4>
-          <p>展示当前用户分数的相关计算参数与公式展开，便于开发、测试和业务核对排序结果。</p>
-        </div>
-        <button type="button" class="button secondary" id="sdm-close">关闭</button>
-      </div>
-      <div class="modal-form">
-        <div class="modal-grid" id="sdm-grid"></div>
-        <div class="formula-box" id="sdm-formula"></div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="button secondary" id="sdm-cancel">关闭</button>
       </div>
     </div>
   </div>
 
   <script>
     (function () {
-      const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
+      const buttons = Array.from(document.querySelectorAll('.nav-btn'));
       const pages = Array.from(document.querySelectorAll('.page'));
       const specPages = Array.from(document.querySelectorAll('.spec-page'));
       const specSidebar = document.getElementById('spec-sidebar');
       const specToggle = document.getElementById('spec-toggle');
-      const overviewTitle = document.getElementById('overview-title');
-      const overviewGrid = document.getElementById('overview-grid');
-      const pills = Array.from(document.querySelectorAll('.pill'));
+      const configButtons = Array.from(document.querySelectorAll('.config-trigger'));
+      const tbody = document.getElementById('record-tbody');
+      const summary = document.getElementById('record-summary');
+      const filterUser = document.getElementById('filter-user');
+      const filterOrder = document.getElementById('filter-order');
+      const filterRisk = document.getElementById('filter-risk');
+      const filterReview = document.getElementById('filter-review');
+      const filterCoin = document.getElementById('filter-coin');
+      const filterGranularity = document.getElementById('filter-granularity');
+      const filterUpdatedStart = document.getElementById('filter-updated-start');
+      const filterUpdatedEnd = document.getElementById('filter-updated-end');
+      const applyBtn = document.getElementById('apply-filter');
+      const resetBtn = document.getElementById('reset-filter');
+      const prevPageBtn = document.getElementById('prev-page');
+      const nextPageBtn = document.getElementById('next-page');
+      const pageSummary = document.getElementById('page-summary');
+      const modal = document.getElementById('config-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalMinScore = document.getElementById('modal-min-score');
+      const modalMaxScore = document.getElementById('modal-max-score');
+      const modalControl = document.getElementById('modal-control');
+      const modalDiscount = document.getElementById('modal-discount');
+      const modalDiscountWrap = document.getElementById('modal-discount-wrap');
+      const modalAddress = document.getElementById('modal-address');
+      const modalAddressWrap = document.getElementById('modal-address-wrap');
+      const modalGoogleCode = document.getElementById('modal-google-code');
+      const modalGoogleBtn = document.getElementById('modal-google-btn');
+      const modalCancel = document.getElementById('modal-cancel');
+      const modalConfirm = document.getElementById('modal-confirm');
+      const modalError = document.getElementById('modal-error');
+      const recordDetailModal = document.getElementById('record-detail-modal');
+      const recordDetailContent = document.getElementById('record-detail-content');
+      const recordDetailClose = document.getElementById('record-detail-close');
+      const recordReviewForm = document.getElementById('record-review-form');
+      const recordReviewDiscountWrap = document.getElementById('record-review-discount-wrap');
+      const recordReviewDiscount = document.getElementById('record-review-discount');
+      const recordReviewRemark = document.getElementById('record-review-remark');
+      const recordReviewGoogleCode = document.getElementById('record-review-google-code');
+      const recordReviewGoogleBtn = document.getElementById('record-review-google-btn');
+      const recordReviewCancel = document.getElementById('record-review-cancel');
+      const recordReviewConfirm = document.getElementById('record-review-confirm');
+      const recordReviewError = document.getElementById('record-review-error');
 
-      const pcFilterKey = document.getElementById('pc-filter-key');
-      const pcFilterStatus = document.getElementById('pc-filter-status');
-      const pcApply = document.getElementById('pc-apply');
-      const pcReset = document.getElementById('pc-reset');
-      const pcTbody = document.getElementById('pc-tbody');
-      const pcSummary = document.getElementById('pc-summary');
-      const pcPrev = document.getElementById('pc-prev');
-      const pcNext = document.getElementById('pc-next');
-      const pcPage = document.getElementById('pc-page');
-      const addConfigBtn = document.getElementById('add-config');
-
-      const puBackConfig = document.getElementById('pu-back-config');
-      const puFilterPair = document.getElementById('pu-filter-pair');
-      const puFilterUser = document.getElementById('pu-filter-user');
-      const puFilterAccount = document.getElementById('pu-filter-account');
-      const puApply = document.getElementById('pu-apply');
-      const puReset = document.getElementById('pu-reset');
-      const puTbody = document.getElementById('pu-tbody');
-      const puSummary = document.getElementById('pu-summary');
-      const puPrev = document.getElementById('pu-prev');
-      const puNext = document.getElementById('pu-next');
-      const puPage = document.getElementById('pu-page');
-
-      const alFilterPair = document.getElementById('al-filter-pair');
-      const alFilterUser = document.getElementById('al-filter-user');
-      const alApply = document.getElementById('al-apply');
-      const alReset = document.getElementById('al-reset');
-      const alTbody = document.getElementById('al-tbody');
-      const alSummary = document.getElementById('al-summary');
-      const alPrev = document.getElementById('al-prev');
-      const alNext = document.getElementById('al-next');
-      const alPage = document.getElementById('al-page');
-
-      const backToList = document.getElementById('back-to-list');
-      const detailKpis = document.getElementById('detail-kpis');
-      const tabs = Array.from(document.querySelectorAll('.tab'));
-      const adDateStart = document.getElementById('ad-date-start');
-      const adDateEnd = document.getElementById('ad-date-end');
-      const adApply = document.getElementById('ad-apply');
-      const adReset = document.getElementById('ad-reset');
-      const adThead = document.getElementById('ad-thead');
-      const adTbody = document.getElementById('ad-tbody');
-      const adSummary = document.getElementById('ad-summary');
-      const adPrev = document.getElementById('ad-prev');
-      const adNext = document.getElementById('ad-next');
-      const adPage = document.getElementById('ad-page');
-
-      const cmClose = document.getElementById('cm-close');
-      const cmPair = document.getElementById('cm-pair');
-      const cmMaxLoss = document.getElementById('cm-max-loss');
-      const cmFutureLoss = document.getElementById('cm-future-loss');
-      const cmLongBankruptcyOffset = document.getElementById('cm-long-bankruptcy-offset');
-      const cmShortBankruptcyOffset = document.getElementById('cm-short-bankruptcy-offset');
-      const cmRiskRate = document.getElementById('cm-risk-rate');
-      const cmEstProfit = document.getElementById('cm-est-profit');
-      const cmReset = document.getElementById('cm-reset');
-      const cmSave = document.getElementById('cm-save');
-      const cmTitle = document.getElementById('cm-title');
-      const cmCycleGroup = document.getElementById('cm-cycle');
-      const statusResultModal = document.getElementById('status-result-modal');
-      const srmTitle = document.getElementById('srm-title');
-      const srmClose = document.getElementById('srm-close');
-      const srmCancel = document.getElementById('srm-cancel');
-      const srmGrid = document.getElementById('srm-grid');
-      const srmFormula = document.getElementById('srm-formula');
-
-      const manualAdlModal = document.getElementById('manual-adl-modal');
-      const mamTitle = document.getElementById('mam-title');
-      const mamClose = document.getElementById('mam-close');
-      const mamCancel = document.getElementById('mam-cancel');
-      const mamConfirm = document.getElementById('mam-confirm');
-      const mamBankruptcy = document.getElementById('mam-bankruptcy');
-      const mamCurrentPrice = document.getElementById('mam-current-price');
-      const mamPositionQty = document.getElementById('mam-position-qty');
-      const mamPositionSide = document.getElementById('mam-position-side');
-      const mamEntryPrice = document.getElementById('mam-entry-price');
-      const mamCloseQty = document.getElementById('mam-close-qty');
-      const mamAfterPnl = document.getElementById('mam-after-pnl');
-      const mamGoogleCode = document.getElementById('mam-google-code');
-      const mamGoogleFill = document.getElementById('mam-google-fill');
-      const mamError = document.getElementById('mam-error');
-      const scoreDetailModal = document.getElementById('score-detail-modal');
-      const sdmTitle = document.getElementById('sdm-title');
-      const sdmClose = document.getElementById('sdm-close');
-      const sdmCancel = document.getElementById('sdm-cancel');
-      const sdmGrid = document.getElementById('sdm-grid');
-      const sdmFormula = document.getElementById('sdm-formula');
-
-      const state = {
-        granularity: 'day',
-        pcPage: 1,
-        puPage: 1,
-        alPage: 1,
-        adPage: 1,
-        adTab: 'orders',
-        activeUserKey: '',
-        activePair: 'BTC/USDT',
-        activeManualKey: ''
+      const riskMap = {
+        serious: { label: '严重风险', className: 'serious' },
+        high: { label: '高风险', className: 'high' },
+        medium: { label: '中风险', className: 'medium' },
+        low: { label: '低风险', className: 'low' }
       };
 
-      const pairUniverse = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'XRP/USDT', 'DOGE/USDT', 'SUI/USDT', 'AVAX/USDT', 'ADA/USDT', 'LINK/USDT', 'TON/USDT', 'TRX/USDT'];
-
-      const pairConfigs = [
-        { pair: 'BTC/USDT', maxLongLoss: 500000, futureLoss: -485200, adlCount: 3, pnl: 28500, status: 'warn', cycle: 'day', longBankruptcyOffset: 5, shortBankruptcyOffset: 5 },
-        { pair: 'ETH/USDT', maxLongLoss: 300000, futureLoss: -125800, adlCount: 1, pnl: 15200, status: 'ok', cycle: 'day', longBankruptcyOffset: 4.5, shortBankruptcyOffset: 4.5 },
-        { pair: 'BNB/USDT', maxLongLoss: 200000, futureLoss: -198500, adlCount: 2, pnl: 8300, status: 'warn', cycle: 'week', longBankruptcyOffset: 5.5, shortBankruptcyOffset: 5.5 },
-        { pair: 'SOL/USDT', maxLongLoss: 150000, futureLoss: -65200, adlCount: 0, pnl: 0, status: 'ok', cycle: 'month', longBankruptcyOffset: 6, shortBankruptcyOffset: 6 },
-        { pair: 'XRP/USDT', maxLongLoss: 120000, futureLoss: -21500, adlCount: 0, pnl: 0, status: 'ok', cycle: 'total', longBankruptcyOffset: 4, shortBankruptcyOffset: 4 },
-        { pair: 'DOGE/USDT', maxLongLoss: 90000, futureLoss: -55800, adlCount: 1, pnl: 4200, status: 'warn', cycle: 'day', longBankruptcyOffset: 6.5, shortBankruptcyOffset: 6.5 },
-        { pair: 'SUI/USDT', maxLongLoss: 70000, futureLoss: -7200, adlCount: 0, pnl: 0, status: 'ok', cycle: 'week', longBankruptcyOffset: 4.2, shortBankruptcyOffset: 4.2 },
-        { pair: 'AVAX/USDT', maxLongLoss: 80000, futureLoss: -18200, adlCount: 0, pnl: 0, status: 'ok', cycle: 'month', longBankruptcyOffset: 4.8, shortBankruptcyOffset: 4.8 },
-        { pair: 'ADA/USDT', maxLongLoss: 60000, futureLoss: -9500, adlCount: 0, pnl: 0, status: 'ok', cycle: 'total', longBankruptcyOffset: 3.8, shortBankruptcyOffset: 3.8 },
-        { pair: 'LINK/USDT', maxLongLoss: 65000, futureLoss: -13600, adlCount: 0, pnl: 0, status: 'ok', cycle: 'day', longBankruptcyOffset: 4.3, shortBankruptcyOffset: 4.3 },
-        { pair: 'TON/USDT', maxLongLoss: 72000, futureLoss: -54000, adlCount: 1, pnl: 6800, status: 'warn', cycle: 'week', longBankruptcyOffset: 5.2, shortBankruptcyOffset: 5.2 },
-        { pair: 'TRX/USDT', maxLongLoss: 50000, futureLoss: -7800, adlCount: 0, pnl: 0, status: 'ok', cycle: 'month', longBankruptcyOffset: 3.5, shortBankruptcyOffset: 3.5 }
-      ];
-
-      const adlUsers = [
-        { pair: 'BTC/USDT', userId: '10001', account: 'user_btc_001', profitThreshold: 50, reduceRatio: 20, reduceTimes: 3, realizedPnl: 28500, lastAt: '2025-07-15 14:30:00', walletBalance: 18400, nominalPosition: 120000, unrealizedPnl: 12600, adl30dCount: 3, adl30dAmount: 28500 },
-        { pair: 'BTC/USDT', userId: '10002', account: 'user_btc_002', profitThreshold: 60, reduceRatio: 25, reduceTimes: 5, realizedPnl: 45200, lastAt: '2025-07-15 15:45:00', walletBalance: 16200, nominalPosition: 135000, unrealizedPnl: 22100, adl30dCount: 5, adl30dAmount: 45200 },
-        { pair: 'BTC/USDT', userId: '10003', account: 'user_btc_003', profitThreshold: 45, reduceRatio: 30, reduceTimes: 2, realizedPnl: 15800, lastAt: '2025-07-15 12:20:00', walletBalance: 14900, nominalPosition: 96000, unrealizedPnl: 9800, adl30dCount: 2, adl30dAmount: 15800 },
-        { pair: 'BTC/USDT', userId: '10004', account: 'user_btc_004', profitThreshold: 55, reduceRatio: 15, reduceTimes: 1, realizedPnl: 8200, lastAt: '2025-07-15 09:30:00', walletBalance: 13200, nominalPosition: 72000, unrealizedPnl: 6100, adl30dCount: 1, adl30dAmount: 8200 },
-        { pair: 'BTC/USDT', userId: '10005', account: 'user_btc_005', profitThreshold: 40, reduceRatio: 35, reduceTimes: 4, realizedPnl: 22600, lastAt: '2025-07-15 16:00:00', walletBalance: 17600, nominalPosition: 110000, unrealizedPnl: 14200, adl30dCount: 4, adl30dAmount: 22600 },
-        { pair: 'ETH/USDT', userId: '20001', account: 'user_eth_001', profitThreshold: 45, reduceRatio: 20, reduceTimes: 2, realizedPnl: 15200, lastAt: '2025-07-15 10:05:00', walletBalance: 9200, nominalPosition: 42000, unrealizedPnl: 1680, adl30dCount: 2, adl30dAmount: 15200 },
-        { pair: 'BNB/USDT', userId: '30001', account: 'user_bnb_001', profitThreshold: 55, reduceRatio: 18, reduceTimes: 2, realizedPnl: 8300, lastAt: '2025-07-14 18:24:00', walletBalance: 7800, nominalPosition: 28000, unrealizedPnl: 720, adl30dCount: 2, adl30dAmount: 8300 },
-        { pair: 'DOGE/USDT', userId: '40001', account: 'user_doge_001', profitThreshold: 35, reduceRatio: 30, reduceTimes: 1, realizedPnl: 4200, lastAt: '2025-07-15 08:12:00', walletBalance: 3400, nominalPosition: 15000, unrealizedPnl: 540, adl30dCount: 1, adl30dAmount: 4200 },
-        { pair: 'TON/USDT', userId: '50001', account: 'user_ton_001', profitThreshold: 48, reduceRatio: 22, reduceTimes: 1, realizedPnl: 6800, lastAt: '2025-07-15 11:40:00', walletBalance: 6200, nominalPosition: 23000, unrealizedPnl: 1380, adl30dCount: 1, adl30dAmount: 6800 }
-      ];
-
-      const orderRecords = {
-        'BTC/USDT|10001': [
-          { at: '2025-07-15 14:30:00', side: '多仓', qty: 5000, markPrice: 67500, avgPrice: 67480, pnl: 8500, afterProfitRate: 45, status: '已完成' },
-          { at: '2025-07-15 12:15:00', side: '空仓', qty: 8000, markPrice: 67200, avgPrice: 67185, pnl: 12000, afterProfitRate: 48, status: '已完成' },
-          { at: '2025-07-15 10:00:00', side: '多仓', qty: 6000, markPrice: 67000, avgPrice: 66990, pnl: 8000, afterProfitRate: 52, status: '已完成' }
-        ]
+      const policyMap = {
+        serious: {
+          title: '严重风险配置',
+          desc: '当前口径：命中严重风险后默认拒绝充值入金，不展示归集地址。',
+          minScore: 90,
+          maxScore: 100,
+          control: 'reject',
+          discountRate: '',
+          address: ''
+        },
+        high: {
+          title: '高风险配置',
+          desc: '当前口径：命中高风险后允许入金，可配置折扣比例。',
+          minScore: 75,
+          maxScore: 89,
+          control: 'discount',
+          discountRate: 70,
+          address: 'TQ8A-78XH-91KR-HR01'
+        },
+        medium: {
+          title: '中风险配置',
+          desc: '当前口径：命中中风险后允许入金，可配置折扣比例。',
+          minScore: 55,
+          maxScore: 74,
+          control: 'discount',
+          discountRate: 88,
+          address: 'TQ8A-78XH-91KR-MD88'
+        },
+        low: {
+          title: '低风险配置',
+          desc: '当前口径：命中低风险后允许入金，默认直接入金。',
+          minScore: 0,
+          maxScore: 54,
+          control: 'direct',
+          discountRate: 100,
+          address: 'TQ8A-78XH-91KR-LW00'
+        }
       };
 
-      const fillRecords = {
-        'BTC/USDT|10001': [
-          { fillId: 'TRD202507150001', orderId: 'ADL202507150001', pair: 'BTC/USDT', at: '2025-07-15 14:30:05', qty: 5000, price: 67480, amount: 337400, fee: -3.37, pnl: 8500 },
-          { fillId: 'TRD202507150002', orderId: 'ADL202507150001', pair: 'BTC/USDT', at: '2025-07-15 14:30:06', qty: 100, price: 67475, amount: 6747.5, fee: -0.07, pnl: 150 },
-          { fillId: 'TRD202507150003', orderId: 'ADL202507150002', pair: 'BTC/USDT', at: '2025-07-15 12:15:10', qty: 8000, price: 67185, amount: 537480, fee: -3.57, pnl: 12000 },
-          { fillId: 'TRD202507150004', orderId: 'ADL202507150003', pair: 'BTC/USDT', at: '2025-07-15 10:00:12', qty: 6000, price: 66990, amount: 401940, fee: -4.02, pnl: 8000 }
-        ]
-      };
-
-      const pageSize = 8;
-      let activeEditPair = '';
-      const manualGoogleDemoCode = '624981';
-
-      const pairPositions = [
-        { pair: 'BTC/USDT', userId: '10001', account: 'user_btc_001', side: '多仓', valueU: 120000, entryPrice: 63500, markPrice: 67480, upnl: 12600, leverage: 20, walletBalance: 18400, adl30dCount: 3, adl30dAmount: 28500, updatedAt: '2025-07-15 14:32:10' },
-        { pair: 'BTC/USDT', userId: '10006', account: 'user_btc_006', side: '空仓', valueU: 54000, entryPrice: 68220, markPrice: 67480, upnl: 980, leverage: 10, walletBalance: 6200, adl30dCount: 1, adl30dAmount: 3600, updatedAt: '2025-07-15 13:11:42' },
-        { pair: 'BTC/USDT', userId: '10008', account: 'user_btc_008', side: '多仓', valueU: 86000, entryPrice: 66110, markPrice: 67480, upnl: 1780, leverage: 25, walletBalance: 9800, adl30dCount: 0, adl30dAmount: 0, updatedAt: '2025-07-15 12:06:08' },
-        { pair: 'ETH/USDT', userId: '20001', account: 'user_eth_001', side: '多仓', valueU: 42000, entryPrice: 3150, markPrice: 3288, upnl: 1680, leverage: 15, walletBalance: 9200, adl30dCount: 2, adl30dAmount: 15200, updatedAt: '2025-07-15 10:12:09' },
-        { pair: 'BNB/USDT', userId: '30001', account: 'user_bnb_001', side: '空仓', valueU: 28000, entryPrice: 590, markPrice: 575, upnl: 720, leverage: 8, walletBalance: 7800, adl30dCount: 2, adl30dAmount: 8300, updatedAt: '2025-07-14 18:26:10' },
-        { pair: 'SOL/USDT', userId: '60001', account: 'user_sol_001', side: '多仓', valueU: 19000, entryPrice: 148, markPrice: 152, upnl: 480, leverage: 12, walletBalance: 4100, adl30dCount: 0, adl30dAmount: 0, updatedAt: '2025-07-15 09:01:30' },
-        { pair: 'DOGE/USDT', userId: '40001', account: 'user_doge_001', side: '多仓', valueU: 15000, entryPrice: 0.165, markPrice: 0.171, upnl: 540, leverage: 20, walletBalance: 3400, adl30dCount: 1, adl30dAmount: 4200, updatedAt: '2025-07-15 08:18:00' },
-        { pair: 'TON/USDT', userId: '50001', account: 'user_ton_001', side: '多仓', valueU: 23000, entryPrice: 7.12, markPrice: 7.55, upnl: 1380, leverage: 10, walletBalance: 6200, adl30dCount: 1, adl30dAmount: 6800, updatedAt: '2025-07-15 11:42:20' },
-        { pair: 'BTC/USDT', userId: '10009', account: 'user_btc_009', side: '多仓', valueU: 46000, entryPrice: 66830, markPrice: 67480, upnl: 450, leverage: 5, walletBalance: 11600, adl30dCount: 0, adl30dAmount: 0, updatedAt: '2025-07-15 15:01:14' },
-        { pair: 'ETH/USDT', userId: '20008', account: 'user_eth_008', side: '空仓', valueU: 26000, entryPrice: 3320, markPrice: 3288, upnl: 250, leverage: 6, walletBalance: 5800, adl30dCount: 0, adl30dAmount: 0, updatedAt: '2025-07-15 10:44:51' }
+      const records = [
+        { orderNo: 'DEP-20260612-0061', hash: '0x8e11ad781aa1d0b4f1903177aaf61061', userId: 'U100321', coin: 'USDT', riskLevel: 'serious', score: 95, sourceAmount: 12800, fromAddress: 'TJn4-9A11-8FC2-RS61', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:42:18', reason: '命中制裁地址关联，来源地址历史黑名单命中', providerResults: [{ name: 'Chainalysis', score: 96, reason: '制裁名单地址直接命中' }, { name: 'TRM', score: 94, reason: '来源地址历史黑名单命中' }, { name: 'AMLBot', score: 95, reason: '高危诈骗标签聚类命中' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0064', hash: '0x8e11ad781aa1d0b4f1903177aaf61064', userId: 'U100417', coin: 'USDT', riskLevel: 'high', score: 81, sourceAmount: 5000, fromAddress: 'TYh2-7B14-55HU-HR64', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:35:44', reason: '命中高风险跳板地址，近 7 天多次与异常地址交互', providerResults: [{ name: 'Chainalysis', score: 82, reason: '高风险跳板地址接触频繁' }, { name: 'TRM', score: 79, reason: '短周期异常交互次数偏高' }, { name: 'AMLBot', score: 81, reason: '来源链路命中高危路径' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 3500, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0068', hash: '0x8e11ad781aa1d0b4f1903177aaf61068', userId: 'U100566', coin: 'BTC', riskLevel: 'medium', score: 61, sourceAmount: 8600, fromAddress: 'bc1q-md68-kyt-5566', receiveAddress: 'bc1q-recv-main-001', updatedAt: '2026-06-12 10:31:09', reason: '命中中风险画像，来源地址活跃度异常但未触发拒绝条件', providerResults: [{ name: 'Chainalysis', score: 63, reason: '地址活跃度异常' }, { name: 'TRM', score: 59, reason: '资金路径存在灰度标签' }, { name: 'AMLBot', score: 61, reason: '间接接触高危服务商地址' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 7568, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0071', hash: '0x8e11ad781aa1d0b4f1903177aaf61071', userId: 'U100728', coin: 'USDT', riskLevel: 'high', score: 84, sourceAmount: 3200, fromAddress: 'TXm1-HR71-SEND-8001', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:26:51', reason: '命中高风险资金来源，地址路径复杂度偏高', providerResults: [{ name: 'Chainalysis', score: 85, reason: '高风险资金来源路径复杂' }, { name: 'TRM', score: 83, reason: '异常跳转节点较多' }, { name: 'AMLBot', score: 84, reason: '来源地址命中风险集群' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 2240, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0075', hash: '0x8e11ad781aa1d0b4f1903177aaf61075', userId: 'U100892', coin: 'USDT', riskLevel: 'medium', score: 58, sourceAmount: 1100, fromAddress: 'TRx8-MD75-SRC-1100', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:18:33', reason: '命中中风险来源地址，链路存在混币接触史', providerResults: [{ name: 'Chainalysis', score: 57, reason: '存在混币服务接触史' }, { name: 'TRM', score: 60, reason: '来源地址灰度标签命中' }, { name: 'AMLBot', score: 58, reason: '间接风险链路触发' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 968, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0078', hash: '0x8e11ad781aa1d0b4f1903177aaf61078', userId: 'U100901', coin: 'USDT', riskLevel: 'serious', score: 97, sourceAmount: 9200, fromAddress: 'TSer-78-HIT-BL97', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 10:11:07', reason: '命中严重风险名单，来源地址与诈骗地址直接关联', providerResults: [{ name: 'Chainalysis', score: 98, reason: '诈骗地址直接关联' }, { name: 'TRM', score: 97, reason: '高危诈骗实体命中' }, { name: 'AMLBot', score: 96, reason: '涉诈地址群组直接连接' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0082', hash: '0x8e11ad781aa1d0b4f1903177aaf61082', userId: 'U101026', coin: 'USDT', riskLevel: 'low', score: 18, sourceAmount: 9600, fromAddress: 'TLow-82-SRC-9600', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:58:42', reason: '低风险正常充值，未命中异常地址规则', providerResults: [{ name: 'Chainalysis', score: 18, reason: '未命中异常标签' }, { name: 'TRM', score: 16, reason: '来源地址正常' }, { name: 'AMLBot', score: 19, reason: 'KYT 检测通过' }], actionText: '直接入金', discountRate: 100, settledAmount: 9600, targetAddress: 'TQ8A-78XH-91KR-LW00', operable: true },
+        { orderNo: 'DEP-20260612-0088', hash: '0x8e11ad781aa1d0b4f1903177aaf61088', userId: 'U101312', coin: 'USDT', riskLevel: 'high', score: 77, sourceAmount: 6800, fromAddress: 'THi8-HR88-SRC-6800', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:46:25', reason: '命中高风险中转地址，短时分拆入账频繁', providerResults: [{ name: 'Chainalysis', score: 79, reason: '高风险中转地址命中' }, { name: 'TRM', score: 76, reason: '短时分拆交易频繁' }, { name: 'AMLBot', score: 77, reason: '资金流向存在可疑模式' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 4760, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true },
+        { orderNo: 'DEP-20260612-0091', hash: '0x8e11ad781aa1d0b4f1903177aaf61091', userId: 'U101430', coin: 'BTC', riskLevel: 'medium', score: 63, sourceAmount: 4700, fromAddress: 'bc1q-md91-risk-430', receiveAddress: 'bc1q-recv-main-001', updatedAt: '2026-06-12 09:35:18', reason: '命中中风险交易对手画像，存在灰度风险标签', providerResults: [{ name: 'Chainalysis', score: 64, reason: '交易对手灰度画像命中' }, { name: 'TRM', score: 62, reason: '地址风险敞口偏高' }, { name: 'AMLBot', score: 63, reason: '来源节点存在中风险标签' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 4136, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0093', hash: '0x8e11ad781aa1d0b4f1903177aaf61093', userId: 'U101566', coin: 'USDT', riskLevel: 'medium', score: 66, sourceAmount: 2100, fromAddress: 'TMd9-93-FROM-2100', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:22:54', reason: '命中中风险策略，链路存在间接高危接触', providerResults: [{ name: 'Chainalysis', score: 67, reason: '间接高危接触' }, { name: 'TRM', score: 65, reason: '链路中存在可疑服务节点' }, { name: 'AMLBot', score: 66, reason: '风险路径交叉命中' }], actionText: '按折扣入金', discountRate: 88, settledAmount: 1848, targetAddress: 'TQ8A-78XH-91KR-MD88', operable: true },
+        { orderNo: 'DEP-20260612-0097', hash: '0x8e11ad781aa1d0b4f1903177aaf61097', userId: 'U101688', coin: 'USDT', riskLevel: 'serious', score: 93, sourceAmount: 7600, fromAddress: 'TSr9-97-BLK-7600', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 09:10:06', reason: '命中严重风险地址群组，历史涉诈标签明确', providerResults: [{ name: 'Chainalysis', score: 94, reason: '严重风险地址群组命中' }, { name: 'TRM', score: 92, reason: '历史涉诈标签明确' }, { name: 'AMLBot', score: 93, reason: '黑名单实体间接直连' }], actionText: '拒绝充值入金', discountRate: 0, settledAmount: 0, targetAddress: '--', operable: false },
+        { orderNo: 'DEP-20260612-0101', hash: '0x8e11ad781aa1d0b4f1903177aaf61101', userId: 'U101824', coin: 'USDT', riskLevel: 'low', score: 12, sourceAmount: 3500, fromAddress: 'TLow-01-SAFE-3500', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 08:57:40', reason: '低风险正常充值，来源地址无异常标签', providerResults: [{ name: 'Chainalysis', score: 11, reason: '低风险正常地址' }, { name: 'TRM', score: 13, reason: '未命中高危标签' }, { name: 'AMLBot', score: 12, reason: 'KYT 结果正常' }], actionText: '直接入金', discountRate: 100, settledAmount: 3500, targetAddress: 'TQ8A-78XH-91KR-LW00', operable: true },
+        { orderNo: 'DEP-20260612-0104', hash: '0x8e11ad781aa1d0b4f1903177aaf61104', userId: 'U101903', coin: 'USDT', riskLevel: 'high', score: 79, sourceAmount: 4300, fromAddress: 'THr1-104-RISK-4300', receiveAddress: 'TAc9-POOL-01-WALLET', updatedAt: '2026-06-12 08:46:12', reason: '命中高风险地址路径，资金来源分层复杂', providerResults: [{ name: 'Chainalysis', score: 80, reason: '资金来源分层复杂' }, { name: 'TRM', score: 78, reason: '高风险路径命中' }, { name: 'AMLBot', score: 79, reason: '异常上游资金来源' }], actionText: '按折扣入金', discountRate: 70, settledAmount: 3010, targetAddress: 'TQ8A-78XH-91KR-HR01', operable: true }
       ];
 
-      function fmtNum(value) {
+      let activeRiskKey = '';
+      let activeReviewOrderNo = '';
+      let currentPage = 1;
+      const pageSize = 10;
+
+      function normalizeAmount(value) {
         const num = Number(value);
-        if (!Number.isFinite(num)) return String(value);
+        if (!Number.isFinite(num)) {
+          return String(value);
+        }
+        if (num === 0) return '0';
         const fixed = num.toFixed(8);
         return fixed.replace(/\.?0+$/, '');
-      }
-
-      function fmtSigned(value) {
-        const num = Number(value) || 0;
-        return (num >= 0 ? '+' : '') + fmtNum(num);
-      }
-
-      function getAdlUserKey(item) {
-        return item.pair + '|' + item.userId;
-      }
-
-      function calcProfitPercent(item) {
-        const nominal = Math.abs(Number(item.nominalPosition) || 0);
-        if (nominal <= 0) return 0;
-        return (Number(item.unrealizedPnl) || 0) / nominal;
-      }
-
-      function calcEffectiveLeverage(item) {
-        const nominal = Math.abs(Number(item.nominalPosition) || 0);
-        const equity = (Number(item.walletBalance) || 0) + (Number(item.unrealizedPnl) || 0);
-        if (nominal <= 0) return 0;
-        return nominal / Math.max(1, equity);
-      }
-
-      function calcBaseRanking(item) {
-        const profitPercent = calcProfitPercent(item);
-        const leverage = calcEffectiveLeverage(item);
-        if (profitPercent >= 0) return profitPercent * leverage;
-        return leverage > 0 ? (profitPercent / leverage) : profitPercent;
-      }
-
-      function buildAdlRankingMap() {
-        const total = Math.max(1, adlUsers.length);
-        const rows = adlUsers.map(function (item) {
-          return {
-            key: getAdlUserKey(item),
-            baseRank: calcBaseRanking(item),
-            adl30dCount: Number(item.adl30dCount) || 0,
-            adl30dAmount: Math.abs(Number(item.adl30dAmount) || 0)
-          };
-        });
-        const map = {};
-
-        rows.forEach(function (item) {
-          map[item.key] = {
-            baseRank: item.baseRank,
-            leveragePnlQuantile: 0,
-            countPenaltyQuantile: 0,
-            amountPenaltyQuantile: 0,
-            fairnessFactor: 1,
-            compositeRank: item.baseRank
-          };
-        });
-
-        rows.slice().sort(function (a, b) {
-          if (b.baseRank !== a.baseRank) return b.baseRank - a.baseRank;
-          return b.key.localeCompare(a.key, 'zh-CN');
-        }).forEach(function (item, index) {
-          map[item.key].leveragePnlQuantile = (index + 1) / total;
-        });
-
-        rows.slice().sort(function (a, b) {
-          if (b.adl30dCount !== a.adl30dCount) return b.adl30dCount - a.adl30dCount;
-          if (b.adl30dAmount !== a.adl30dAmount) return b.adl30dAmount - a.adl30dAmount;
-          return b.key.localeCompare(a.key, 'zh-CN');
-        }).forEach(function (item, index) {
-          map[item.key].countPenaltyQuantile = (total - index) / total;
-        });
-
-        rows.slice().sort(function (a, b) {
-          if (b.adl30dAmount !== a.adl30dAmount) return b.adl30dAmount - a.adl30dAmount;
-          if (b.adl30dCount !== a.adl30dCount) return b.adl30dCount - a.adl30dCount;
-          return b.key.localeCompare(a.key, 'zh-CN');
-        }).forEach(function (item, index) {
-          map[item.key].amountPenaltyQuantile = (total - index) / total;
-        });
-
-        Object.keys(map).forEach(function (key) {
-          const current = map[key];
-          current.fairnessFactor = 1 + 0.35 * current.countPenaltyQuantile + 0.15 * current.amountPenaltyQuantile;
-          current.compositeRank = current.baseRank >= 0
-            ? current.baseRank / current.fairnessFactor
-            : current.baseRank * current.fairnessFactor;
-        });
-
-        return map;
-      }
-
-      function buildPairPositionRankingMap() {
-        const total = Math.max(1, pairPositions.length);
-        const rows = pairPositions.map(function (item) {
-          const walletBalance = Number(item.walletBalance) || Math.max(1, (Number(item.valueU) || 0) / Math.max(1, Number(item.leverage) || 1));
-          return {
-            key: item.pair + '|' + item.userId,
-            baseRank: calcBaseRanking({
-              nominalPosition: item.valueU,
-              unrealizedPnl: item.upnl,
-              walletBalance: walletBalance
-            }),
-            adl30dCount: Number(item.adl30dCount) || 0,
-            adl30dAmount: Math.abs(Number(item.adl30dAmount) || 0)
-          };
-        });
-        const map = {};
-
-        rows.forEach(function (item) {
-          map[item.key] = {
-            baseRank: item.baseRank,
-            fairnessFactor: 1,
-            compositeRank: item.baseRank
-          };
-        });
-
-        rows.slice().sort(function (a, b) {
-          if (b.adl30dCount !== a.adl30dCount) return b.adl30dCount - a.adl30dCount;
-          if (b.adl30dAmount !== a.adl30dAmount) return b.adl30dAmount - a.adl30dAmount;
-          return b.key.localeCompare(a.key, 'zh-CN');
-        }).forEach(function (item, index) {
-          map[item.key].countPenaltyQuantile = (total - index) / total;
-        });
-
-        rows.slice().sort(function (a, b) {
-          if (b.adl30dAmount !== a.adl30dAmount) return b.adl30dAmount - a.adl30dAmount;
-          if (b.adl30dCount !== a.adl30dCount) return b.adl30dCount - a.adl30dCount;
-          return b.key.localeCompare(a.key, 'zh-CN');
-        }).forEach(function (item, index) {
-          map[item.key].amountPenaltyQuantile = (total - index) / total;
-        });
-
-        Object.keys(map).forEach(function (key) {
-          const current = map[key];
-          const countPenaltyQuantile = current.countPenaltyQuantile || 0;
-          const amountPenaltyQuantile = current.amountPenaltyQuantile || 0;
-          current.fairnessFactor = 1 + 0.35 * countPenaltyQuantile + 0.15 * amountPenaltyQuantile;
-          current.compositeRank = current.baseRank >= 0
-            ? current.baseRank / current.fairnessFactor
-            : current.baseRank * current.fairnessFactor;
-        });
-
-        return map;
-      }
-
-      function getRankingDetail(item, rankingMap, mode) {
-        const key = mode === 'adl' ? getAdlUserKey(item) : (item.pair + '|' + item.userId);
-        const nominal = Math.abs(Number(mode === 'adl' ? item.nominalPosition : item.valueU) || 0);
-        const unrealized = Number(mode === 'adl' ? item.unrealizedPnl : item.upnl) || 0;
-        const walletBalance = Number(item.walletBalance) || (nominal / Math.max(1, Number(item.leverage) || 1));
-        const profitPercent = calcProfitPercent({
-          nominalPosition: nominal,
-          unrealizedPnl: unrealized
-        });
-        const effectiveLeverage = calcEffectiveLeverage({
-          nominalPosition: nominal,
-          unrealizedPnl: unrealized,
-          walletBalance: walletBalance
-        });
-        const ranking = rankingMap[key] || {};
-        const baseRank = ranking.baseRank || calcBaseRanking({
-          nominalPosition: nominal,
-          unrealizedPnl: unrealized,
-          walletBalance: walletBalance
-        });
-        const count = Number(item.adl30dCount) || 0;
-        const amount = Number(item.adl30dAmount) || 0;
-        return {
-          key: key,
-          title: item.pair + ' / ' + item.userId,
-          nominal: nominal,
-          unrealized: unrealized,
-          walletBalance: walletBalance,
-          profitPercent: profitPercent,
-          effectiveLeverage: effectiveLeverage,
-          baseRank: baseRank,
-          adl30dCount: count,
-          adl30dAmount: amount,
-          countPenaltyQuantile: ranking.countPenaltyQuantile || 0,
-          amountPenaltyQuantile: ranking.amountPenaltyQuantile || 0,
-          fairnessFactor: ranking.fairnessFactor || 1,
-          compositeRank: ranking.compositeRank || baseRank
-        };
-      }
-
-      function openScoreDetail(detail) {
-        sdmTitle.textContent = '分数计算详情 - ' + detail.title;
-        sdmGrid.innerHTML = [
-          { k: '名目仓位', v: fmtNum(detail.nominal) + ' USDT' },
-          { k: '未实现收益', v: fmtSigned(detail.unrealized) + ' USDT' },
-          { k: '钱包余额', v: fmtNum(detail.walletBalance) + ' USDT' },
-          { k: '盈亏百分比', v: fmtNum(detail.profitPercent) },
-          { k: '有效杠杆', v: fmtNum(detail.effectiveLeverage) },
-          { k: '基础排序值', v: fmtNum(detail.baseRank) },
-          { k: '30天ADL减仓次数', v: String(detail.adl30dCount) },
-          { k: '30天ADL减仓金额', v: fmtNum(detail.adl30dAmount) + ' USDT' },
-          { k: '次数惩罚分位值', v: fmtNum(detail.countPenaltyQuantile) },
-          { k: '金额惩罚分位值', v: fmtNum(detail.amountPenaltyQuantile) },
-          { k: '公平调节系数', v: fmtNum(detail.fairnessFactor) },
-          { k: '综合排序值', v: fmtNum(detail.compositeRank) }
-        ].map(function (item) {
-          return '<div class="kpi"><small>' + item.k + '</small><strong>' + item.v + '</strong></div>';
-        }).join('');
-        sdmFormula.textContent =
-          '盈亏百分比 = ' + fmtSigned(detail.unrealized) + ' / ' + fmtNum(detail.nominal) + ' = ' + fmtNum(detail.profitPercent) + '\n' +
-          '有效杠杆 = ' + fmtNum(detail.nominal) + ' / (' + fmtNum(detail.walletBalance) + ' + ' + fmtSigned(detail.unrealized) + ') = ' + fmtNum(detail.effectiveLeverage) + '\n' +
-          (detail.profitPercent >= 0
-            ? '基础排序值 = 盈亏百分比 × 有效杠杆 = ' + fmtNum(detail.profitPercent) + ' × ' + fmtNum(detail.effectiveLeverage) + ' = ' + fmtNum(detail.baseRank)
-            : '基础排序值 = 盈亏百分比 ÷ 有效杠杆 = ' + fmtNum(detail.profitPercent) + ' ÷ ' + fmtNum(detail.effectiveLeverage) + ' = ' + fmtNum(detail.baseRank)) + '\n' +
-          '公平调节系数 = 1 + 0.35 × ' + fmtNum(detail.countPenaltyQuantile) + ' + 0.15 × ' + fmtNum(detail.amountPenaltyQuantile) + ' = ' + fmtNum(detail.fairnessFactor) + '\n' +
-          (detail.baseRank >= 0
-            ? '综合排序值 = 基础排序值 ÷ 公平调节系数 = ' + fmtNum(detail.baseRank) + ' ÷ ' + fmtNum(detail.fairnessFactor) + ' = ' + fmtNum(detail.compositeRank)
-            : '综合排序值 = 基础排序值 × 公平调节系数 = ' + fmtNum(detail.baseRank) + ' × ' + fmtNum(detail.fairnessFactor) + ' = ' + fmtNum(detail.compositeRank));
-        scoreDetailModal.classList.add('active');
-      }
-
-      function closeScoreDetail() {
-        scoreDetailModal.classList.remove('active');
       }
 
       function nowStr() {
@@ -1578,11 +1493,119 @@
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
       }
 
-      function sum(list, field) {
-        return list.reduce(function (acc, item) {
-          const v = Number(item[field]);
-          return acc + (Number.isFinite(v) ? v : 0);
-        }, 0);
+      function getControlLabel(control) {
+        if (control === 'reject') return '拒绝充值入金';
+        if (control === 'discount') return '按折扣入金';
+        return '直接入金';
+      }
+
+      function getReviewStatusKey(record) {
+        if (record.reviewStatus === 'rejected') return 'rejected';
+        if (record.reviewStatus === 'approved') return 'completed';
+        if (record.control === 'reject') return 'auto_reject';
+        if (record.control === 'discount') {
+          const settled = Number(record.settledAmount);
+          if (!Number.isFinite(settled) || settled === 0) return 'pending';
+          return 'completed';
+        }
+        if (record.control === 'direct') return 'completed';
+        return '';
+      }
+
+      function getReviewStatusLabel(statusKey) {
+        if (statusKey === 'auto_reject') return '自动拒绝';
+        if (statusKey === 'pending') return '待审核';
+        if (statusKey === 'completed') return '已完成';
+        if (statusKey === 'rejected') return '已拒绝';
+        return '--';
+      }
+
+      function getControlDesc(riskKey) {
+        const policy = policyMap[riskKey];
+        const label = getControlLabel(policy.control);
+        if (policy.control === 'reject') {
+          return '当前口径：命中' + riskMap[riskKey].label + '后拒绝充值入金，不展示归集地址。';
+        }
+        if (policy.control === 'discount') {
+          return '当前口径：命中' + riskMap[riskKey].label + '后允许入金，按 ' + policy.discountRate + '% 折扣到账。';
+        }
+        return '当前口径：命中' + riskMap[riskKey].label + '后允许入金，直接入金。';
+      }
+
+      function updateControlVisibility() {
+        const control = modalControl.value;
+        modalDiscountWrap.style.display = control === 'discount' ? 'flex' : 'none';
+        modalAddressWrap.style.display = control === 'reject' ? 'none' : 'flex';
+      }
+
+      function syncPolicyToPage(riskKey) {
+        const policy = policyMap[riskKey];
+        const controlLabel = getControlLabel(policy.control);
+        const discountLabel = policy.control === 'reject' ? '--' : String(policy.control === 'discount' ? policy.discountRate : 100) + '%';
+        const addressLabel = policy.control === 'reject' ? '--' : (policy.address || '--');
+        const snapshotRange = policy.minScore + ' - ' + policy.maxScore;
+
+        const fieldMap = {
+          'min-score': String(policy.minScore),
+          'max-score': String(policy.maxScore),
+          'control-label': controlLabel,
+          'discount-label': discountLabel,
+          address: addressLabel,
+          'snapshot-range': snapshotRange,
+          'snapshot-control': controlLabel,
+          'snapshot-discount': discountLabel,
+          'snapshot-address': addressLabel
+        };
+
+        Object.keys(fieldMap).forEach(function (field) {
+          const node = document.querySelector('[data-policy="' + riskKey + '"][data-field="' + field + '"]');
+          if (node) {
+            node.textContent = fieldMap[field];
+          }
+        });
+      }
+
+      function syncRecordsFromPolicy() {
+        records.forEach(function (record) {
+          const policy = policyMap[record.riskLevel];
+          if (!policy) {
+            return;
+          }
+          record.actionText = getControlLabel(policy.control);
+          record.control = policy.control;
+          if (policy.control === 'reject') {
+            record.discountRate = 0;
+            record.settledAmount = 0;
+            record.targetAddress = '--';
+            record.operable = false;
+            record.reviewStatus = '';
+          } else if (policy.control === 'discount') {
+            record.discountRate = Number(policy.discountRate || 0);
+            record.settledAmount = 0;
+            record.targetAddress = policy.address || '--';
+            record.operable = true;
+            record.reviewStatus = 'pending';
+          } else {
+            record.discountRate = 100;
+            record.settledAmount = record.sourceAmount;
+            record.targetAddress = policy.address || '--';
+            record.operable = true;
+            record.reviewStatus = '';
+          }
+        });
+      }
+
+      function activate(pageId) {
+        buttons.forEach(function (button) {
+          button.classList.toggle('active', button.dataset.page === pageId);
+        });
+        pages.forEach(function (page) {
+          page.classList.toggle('active', page.id === pageId);
+        });
+        specPages.forEach(function (page) {
+          page.classList.toggle('active', page.dataset.specPage === pageId);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
       function setSpecCollapsed(collapsed) {
@@ -1590,824 +1613,320 @@
         specToggle.textContent = collapsed ? '展开口径定义文档' : '收回口径';
       }
 
-      function activate(pageId) {
-        navButtons.forEach(function (btn) { btn.classList.toggle('active', btn.dataset.page === pageId); });
-        pages.forEach(function (page) { page.classList.toggle('active', page.id === pageId); });
-        specPages.forEach(function (page) { page.classList.toggle('active', page.dataset.specPage === pageId); });
-        if (pageId === 'pair-config') overviewTitle.textContent = 'ADL（自动减仓）币对配置';
-        if (pageId === 'config-editor') overviewTitle.textContent = 'ADL减仓配置编辑';
-        if (pageId === 'pair-users') overviewTitle.textContent = '币对持仓用户列表';
-        if (pageId === 'adl-list') overviewTitle.textContent = 'ADL减仓列表';
-        if (pageId === 'adl-detail') overviewTitle.textContent = 'ADL减仓详情';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      function openPolicyModal(riskKey) {
+        const policy = policyMap[riskKey];
+        if (!policy) {
+          return;
+        }
+        activeRiskKey = riskKey;
+        modalTitle.textContent = policy.title;
+        modalDesc.textContent = getControlDesc(riskKey);
+        modalMinScore.value = policy.minScore;
+        modalMaxScore.value = policy.maxScore;
+        modalControl.value = policy.control;
+        modalDiscount.value = policy.discountRate;
+        modalAddress.value = policy.address;
+        modalGoogleCode.value = '';
+        modalError.textContent = '';
+        updateControlVisibility();
+        modal.classList.add('active');
       }
 
-      function getOverviewMetrics() {
-        const cfgList = pairConfigs;
-        const warnCount = cfgList.filter(function (c) { return c.status === 'warn'; }).length;
-        const todayCount = sum(cfgList, 'adlCount');
-        const pnlTotal = sum(cfgList, 'pnl');
-        return [
-          { title: '监控币对总数', value: String(cfgList.length), hint: '按币对配置条目统计' },
-          { title: '风险预警币对', value: String(warnCount), hint: '状态为风险预警的币对数' },
-          { title: '今日ADL减仓次数', value: String(todayCount), hint: '按币对汇总展示' },
-          { title: 'ADL盈利总盈亏', value: (pnlTotal >= 0 ? '+' : '') + fmtNum(pnlTotal) + ' USDT', hint: '累计已实现盈亏（演示）', className: pnlTotal >= 0 ? 'text-ok' : 'text-danger' }
-        ];
+      function closePolicyModal() {
+        modalError.textContent = '';
+        modal.classList.remove('active');
       }
 
-      function renderOverview() {
-        const metrics = getOverviewMetrics();
-        overviewGrid.innerHTML = metrics.map(function (m) {
-          return (
-            '<div class="overview-card">' +
-              '<small>' + m.title + '</small>' +
-              '<strong class="' + (m.className || '') + '">' + m.value + '</strong>' +
-              '<span>' + (m.hint || '') + '</span>' +
-            '</div>'
-          );
-        }).join('');
-      }
-
-      function getPairConfigFiltered() {
-        const key = (pcFilterKey.value || '').trim().toLowerCase();
-        const st = pcFilterStatus.value;
-        return pairConfigs.filter(function (item) {
-          const keyOk = !key || item.pair.toLowerCase().includes(key);
-          const stOk = !st || item.status === st;
-          return keyOk && stOk;
+      function hasRangeOverlap(currentRiskKey, minScore, maxScore) {
+        return Object.keys(policyMap).some(function (riskKey) {
+          if (riskKey === currentRiskKey) {
+            return false;
+          }
+          const other = policyMap[riskKey];
+          return !(maxScore < other.minScore || minScore > other.maxScore);
         });
       }
 
-      function renderPairConfig() {
-        const list = getPairConfigFiltered();
-        const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
-        if (state.pcPage > totalPages) state.pcPage = totalPages;
-        const start = (state.pcPage - 1) * pageSize;
-        const pageList = list.slice(start, start + pageSize);
-
-        pcSummary.textContent = '当前展示 ' + list.length + ' 条币对配置';
-        pcPage.textContent = '第 ' + state.pcPage + ' 页 / 共 ' + totalPages + ' 页';
-        pcPrev.disabled = state.pcPage === 1;
-        pcNext.disabled = state.pcPage === totalPages;
-
-        pcTbody.innerHTML = pageList.map(function (row) {
-          const statusTag = row.status === 'warn'
-            ? '<button type="button" class="score-link pc-status" data-pair="' + row.pair + '">风险预警</button>'
-            : '<span class="tag ok">正常</span>';
-          const pnl = Number(row.pnl) || 0;
-          const pnlText = (pnl >= 0 ? '+' : '') + fmtNum(pnl);
-          const pnlClass = pnl >= 0 ? 'text-ok' : 'text-danger';
-          return (
-            '<tr>' +
-              '<td>' + row.pair + '</td>' +
-              '<td>' + fmtNum(row.maxLongLoss) + '</td>' +
-              '<td class="text-danger">' + fmtNum(row.futureLoss) + '</td>' +
-              '<td>' + String(row.adlCount) + '</td>' +
-              '<td class="' + pnlClass + '">' + pnlText + '</td>' +
-              '<td>' + statusTag + '</td>' +
-              '<td>' +
-                '<div class="button-group">' +
-                  '<button type="button" class="button secondary pc-edit" data-pair="' + row.pair + '">编辑</button>' +
-                  '<button type="button" class="button secondary pc-users" data-pair="' + row.pair + '">币对持仓用户</button>' +
-                  '<button type="button" class="button pc-view" data-pair="' + row.pair + '">减仓详情</button>' +
-                '</div>' +
-              '</td>' +
-            '</tr>'
-          );
-        }).join('');
-
-        Array.from(document.querySelectorAll('.pc-edit')).forEach(function (btn) {
-          btn.addEventListener('click', function () { openConfigModal(btn.dataset.pair); });
-        });
-        Array.from(document.querySelectorAll('.pc-status')).forEach(function (btn) {
-          btn.addEventListener('click', function () { openStatusResult(btn.dataset.pair); });
-        });
-        Array.from(document.querySelectorAll('.pc-view')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            state.activePair = btn.dataset.pair;
-            alFilterPair.value = state.activePair;
-            state.alPage = 1;
-            renderAdlList();
-            activate('adl-list');
-          });
-        });
-
-        Array.from(document.querySelectorAll('.pc-users')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            state.activePair = btn.dataset.pair;
-            puFilterPair.value = state.activePair;
-            state.puPage = 1;
-            renderPairUsers();
-            activate('pair-users');
-          });
-        });
-      }
-
-      function renderPairSelect(selectEl, includeAll) {
-        const options = (includeAll ? ['全部'] : []).concat(pairUniverse);
-        selectEl.innerHTML = options.map(function (p) {
-          if (p === '全部') return '<option value="">全部</option>';
-          return '<option value="' + p + '">' + p + '</option>';
-        }).join('');
-      }
-
-      function getPairUsersFiltered() {
-        const pair = puFilterPair.value;
-        const uid = (puFilterUser.value || '').trim();
-        const acc = (puFilterAccount.value || '').trim().toLowerCase();
-        const rankingMap = buildPairPositionRankingMap();
-        return pairPositions.filter(function (item) {
-          const pairOk = !pair || item.pair === pair;
-          const uidOk = !uid || String(item.userId).includes(uid);
-          const accOk = !acc || String(item.account).toLowerCase().includes(acc);
-          return pairOk && uidOk && accOk;
+      function getFilteredRecords() {
+        return records.filter(function (record) {
+          const userOk = !filterUser.value || record.userId.toLowerCase().includes(filterUser.value.trim().toLowerCase());
+          const orderOk = !filterOrder.value || record.orderNo.toLowerCase().includes(filterOrder.value.trim().toLowerCase());
+          const riskOk = !filterRisk.value || record.riskLevel === filterRisk.value;
+          const reviewOk = !filterReview.value || getReviewStatusKey(record) === filterReview.value;
+          const coinOk = !filterCoin.value || record.coin === filterCoin.value;
+          const recordTime = new Date(record.updatedAt.replace(' ', 'T'));
+          const startOk = !filterUpdatedStart.value || recordTime >= new Date(filterUpdatedStart.value);
+          const endOk = !filterUpdatedEnd.value || recordTime <= new Date(filterUpdatedEnd.value);
+          return userOk && orderOk && riskOk && reviewOk && coinOk && startOk && endOk;
         }).sort(function (a, b) {
-          const rankDiff = (rankingMap[b.pair + '|' + b.userId].compositeRank || 0) - (rankingMap[a.pair + '|' + a.userId].compositeRank || 0);
-          if (rankDiff !== 0) return rankDiff;
-          const t = new Date(b.updatedAt.replace(' ', 'T')) - new Date(a.updatedAt.replace(' ', 'T'));
-          if (t !== 0) return t;
-          return String(b.userId).localeCompare(String(a.userId), 'zh-CN');
-        });
-      }
-
-      function renderPairUsers() {
-        const list = getPairUsersFiltered();
-        const rankingMap = buildPairPositionRankingMap();
-        const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
-        if (state.puPage > totalPages) state.puPage = totalPages;
-        const start = (state.puPage - 1) * pageSize;
-        const pageList = list.slice(start, start + pageSize);
-
-        puSummary.textContent = '当前展示 ' + list.length + ' 条持仓用户';
-        puPage.textContent = '第 ' + state.puPage + ' 页 / 共 ' + totalPages + ' 页';
-        puPrev.disabled = state.puPage === 1;
-        puNext.disabled = state.puPage === totalPages;
-
-        puTbody.innerHTML = pageList.map(function (row) {
-          const upnl = Number(row.upnl) || 0;
-          const upnlText = (upnl >= 0 ? '+' : '') + fmtNum(upnl);
-          const upnlClass = upnl >= 0 ? 'text-ok' : 'text-danger';
-          const key = row.pair + '|' + row.userId;
-          const ranking = rankingMap[key] || { compositeRank: 0 };
-          return (
-            '<tr>' +
-              '<td>' + row.pair + '</td>' +
-              '<td>' + row.userId + '</td>' +
-              '<td>' + row.account + '</td>' +
-              '<td>' + row.side + '</td>' +
-              '<td>' + fmtNum(row.valueU) + '</td>' +
-              '<td>' + fmtNum(row.entryPrice) + '</td>' +
-              '<td>' + fmtNum(row.markPrice) + '</td>' +
-              '<td class="' + upnlClass + '">' + upnlText + '</td>' +
-              '<td>' + String(row.leverage) + 'x</td>' +
-              '<td><button type="button" class="score-link pu-score" data-key="' + key + '">' + fmtNum(ranking.compositeRank) + '</button></td>' +
-              '<td>' + row.updatedAt + '</td>' +
-              '<td>' +
-                '<div class="button-group">' +
-                  '<button type="button" class="button pu-manual" data-key="' + key + '">手动ADL减仓</button>' +
-                  '<button type="button" class="button secondary pu-detail" data-key="' + key + '">减仓详情</button>' +
-                '</div>' +
-              '</td>' +
-            '</tr>'
-          );
-        }).join('');
-
-        Array.from(document.querySelectorAll('.pu-manual')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            openManualAdlModal(btn.dataset.key);
-          });
-        });
-        Array.from(document.querySelectorAll('.pu-score')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            const position = getPositionByKey(btn.dataset.key);
-            if (!position) return;
-            openScoreDetail(getRankingDetail(position, rankingMap, 'position'));
-          });
-        });
-        Array.from(document.querySelectorAll('.pu-detail')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            openDetail(btn.dataset.key, 'orders');
-          });
-        });
-      }
-
-      function getAdlListFiltered() {
-        const pair = alFilterPair.value;
-        const uid = (alFilterUser.value || '').trim();
-        const rankingMap = buildAdlRankingMap();
-        return adlUsers.filter(function (item) {
-          const pairOk = !pair || item.pair === pair;
-          const uidOk = !uid || item.userId.includes(uid);
-          return pairOk && uidOk;
-        }).sort(function (a, b) {
-          const rankDiff = (rankingMap[getAdlUserKey(b)].compositeRank || 0) - (rankingMap[getAdlUserKey(a)].compositeRank || 0);
-          if (rankDiff !== 0) return rankDiff;
-          const t = new Date(b.lastAt.replace(' ', 'T')) - new Date(a.lastAt.replace(' ', 'T'));
-          if (t !== 0) return t;
+          const timeDiff = new Date(b.updatedAt.replace(' ', 'T')) - new Date(a.updatedAt.replace(' ', 'T'));
+          if (timeDiff !== 0) {
+            return timeDiff;
+          }
           return b.userId.localeCompare(a.userId, 'zh-CN');
         });
       }
 
-      function renderAdlList() {
-        const list = getAdlListFiltered();
-        const rankingMap = buildAdlRankingMap();
+      function openRecordDetail(record) {
+        const risk = riskMap[record.riskLevel];
+        const providerHtml = (record.providerResults || []).map(function (item) {
+          return '<div class="desc-item full"><span>' + item.name + '</span><strong>分数：' + item.score + '，原因：' + item.reason + '</strong></div>';
+        }).join('');
+        recordDetailContent.innerHTML =
+          '<div class="desc-list">' +
+            '<div class="desc-item"><span>订单号</span><strong>' + record.orderNo + '</strong></div>' +
+            '<div class="desc-item"><span>用户 ID</span><strong>' + record.userId + '</strong></div>' +
+            '<div class="desc-item"><span>风险等级</span><strong class="' + risk.className + '">' + risk.label + '</strong></div>' +
+            '<div class="desc-item"><span>风险分数</span><strong>' + record.score + '</strong></div>' +
+            '<div class="desc-item"><span>最后更新时间</span><strong>' + record.updatedAt + '</strong></div>' +
+            '<div class="desc-item"><span>入金控制</span><strong>' + record.actionText + '</strong></div>' +
+            '<div class="desc-item"><span>折扣比例</span><strong>' + (record.discountRate ? record.discountRate + '%' : '--') + '</strong></div>' +
+            '<div class="desc-item"><span>到账金额</span><strong>' + normalizeAmount(record.settledAmount) + ' ' + record.coin + '</strong></div>' +
+            '<div class="desc-item"><span>原始入金金额</span><strong>' + normalizeAmount(record.sourceAmount) + ' ' + record.coin + '</strong></div>' +
+            '<div class="desc-item full"><span>充值 HASH</span><strong>' + record.hash + '</strong></div>' +
+            '<div class="desc-item full"><span>FROM 地址</span><strong>' + record.fromAddress + '</strong></div>' +
+            '<div class="desc-item full"><span>收款地址</span><strong>' + record.receiveAddress + '</strong></div>' +
+            '<div class="desc-item full"><span>归集地址</span><strong>' + record.targetAddress + '</strong></div>' +
+            '<div class="desc-item full"><span>服务商返回结果</span><strong>见下方各服务商分数与原因</strong></div>' +
+            providerHtml +
+          '</div>';
+
+        activeReviewOrderNo = record.orderNo;
+        recordReviewError.textContent = '';
+        recordReviewGoogleCode.value = '';
+        recordReviewRemark.value = '';
+        recordReviewDiscount.value = String(record.discountRate || ((policyMap[record.riskLevel] && policyMap[record.riskLevel].discountRate) ? policyMap[record.riskLevel].discountRate : 0));
+
+        const decision = recordReviewForm.querySelector('input[name="review-decision"][value="approve"]');
+        if (decision) decision.checked = true;
+        recordReviewDiscountWrap.style.display = 'flex';
+
+        const showReview = record.control === 'discount' && Number(record.settledAmount) === 0;
+        recordReviewForm.style.display = showReview ? 'block' : 'none';
+        recordDetailModal.classList.add('active');
+      }
+
+      function closeRecordDetail() {
+        recordDetailModal.classList.remove('active');
+      }
+
+      function renderRecords() {
+        const list = getFilteredRecords();
         const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
-        if (state.alPage > totalPages) state.alPage = totalPages;
-        const start = (state.alPage - 1) * pageSize;
-        const pageList = list.slice(start, start + pageSize);
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageList = list.slice(startIndex, startIndex + pageSize);
 
-        alSummary.textContent = '当前展示 ' + list.length + ' 条减仓记录';
-        alPage.textContent = '第 ' + state.alPage + ' 页 / 共 ' + totalPages + ' 页';
-        alPrev.disabled = state.alPage === 1;
-        alNext.disabled = state.alPage === totalPages;
+        summary.textContent = '当前共 ' + list.length + ' 笔 KYT 充值记录';
+        pageSummary.textContent = '第 ' + currentPage + ' 页 / 共 ' + totalPages + ' 页';
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
 
-        alTbody.innerHTML = pageList.map(function (row) {
-          const pnl = Number(row.realizedPnl) || 0;
-          const pnlText = (pnl >= 0 ? '+' : '') + fmtNum(pnl);
-          const pnlClass = pnl >= 0 ? 'text-ok' : 'text-danger';
-          const key = row.pair + '|' + row.userId;
-          const ranking = rankingMap[key] || { compositeRank: 0 };
+        tbody.innerHTML = pageList.map(function (record) {
+          const risk = riskMap[record.riskLevel];
+          const reviewLabel = getReviewStatusLabel(getReviewStatusKey(record));
           return (
-            '<tr>' +
-              '<td>' + row.pair + '</td>' +
-              '<td>' + row.userId + '</td>' +
-              '<td>' + row.account + '</td>' +
-              '<td>' + String(row.profitThreshold) + '</td>' +
-              '<td>' + String(row.reduceRatio) + '</td>' +
-              '<td>' + String(row.reduceTimes) + '</td>' +
-              '<td>' + String(row.adl30dCount || 0) + '</td>' +
-              '<td>' + fmtNum(row.adl30dAmount || 0) + '</td>' +
-              '<td class="' + pnlClass + '">' + pnlText + '</td>' +
-              '<td>' + row.lastAt + '<br /><button type="button" class="score-link al-score" data-key="' + key + '" style="margin-top:6px;">综合排序值 ' + fmtNum(ranking.compositeRank) + '</button></td>' +
-              '<td>' +
-                '<div class="button-group">' +
-                  '<button type="button" class="button secondary al-orders" data-key="' + key + '">订单记录</button>' +
-                  '<button type="button" class="button secondary al-fills" data-key="' + key + '">成交记录</button>' +
-                '</div>' +
-              '</td>' +
+            '<tr class="record-row" data-order="' + record.orderNo + '">' +
+              '<td>' + record.orderNo + '</td>' +
+              '<td>' + record.userId + '</td>' +
+              '<td><span class="risk-tag ' + risk.className + '">' + risk.label + '</span></td>' +
+              '<td>' + reviewLabel + '</td>' +
+              '<td>' + record.updatedAt + '</td>' +
+              '<td>' + normalizeAmount(record.sourceAmount) + ' ' + record.coin + '</td>' +
+              '<td>' + record.actionText + '</td>' +
+              '<td>' + normalizeAmount(record.settledAmount) + ' ' + record.coin + '</td>' +
+              '<td><button type="button" class="button secondary detail-trigger" data-order="' + record.orderNo + '">查看详情</button></td>' +
             '</tr>'
           );
         }).join('');
 
-        Array.from(document.querySelectorAll('.al-orders')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            openDetail(btn.dataset.key, 'orders');
+        if (!pageList.length) {
+          return;
+        }
+
+        Array.from(document.querySelectorAll('.record-row')).forEach(function (row) {
+          row.addEventListener('click', function (event) {
+            if (event.target.closest('.detail-trigger')) {
+              return;
+            }
           });
         });
-        Array.from(document.querySelectorAll('.al-score')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            const row = getUserRowByKey(btn.dataset.key);
-            if (!row) return;
-            openScoreDetail(getRankingDetail(row, rankingMap, 'adl'));
+
+        Array.from(document.querySelectorAll('.detail-trigger')).forEach(function (button) {
+          button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const record = records.find(function (item) {
+              return item.orderNo === button.dataset.order;
+            });
+            if (record) {
+              openRecordDetail(record);
+            }
           });
         });
-        Array.from(document.querySelectorAll('.al-fills')).forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            openDetail(btn.dataset.key, 'fills');
-          });
-        });
       }
 
-      function getUserRowByKey(key) {
-        return adlUsers.find(function (u) { return u.pair + '|' + u.userId === key; });
-      }
-
-      function renderDetailKpis(row) {
-        if (!row) {
-          detailKpis.innerHTML = '';
-          return;
-        }
-        const pnl = Number(row.realizedPnl) || 0;
-        const pnlText = (pnl >= 0 ? '+' : '') + fmtNum(pnl) + ' USDT';
-        const pnlClass = pnl >= 0 ? 'text-ok' : 'text-danger';
-        const items = [
-          { k: '交易对', v: row.pair },
-          { k: '用户ID', v: row.userId },
-          { k: '用户账号', v: row.account },
-          { k: '盈利阈值(%)', v: String(row.profitThreshold) },
-          { k: '减仓比例(%)', v: String(row.reduceRatio) },
-          { k: '减仓次数', v: String(row.reduceTimes) },
-          { k: '减仓已实现盈亏(USDT)', v: pnlText, cls: pnlClass },
-          { k: '最新减仓时间', v: row.lastAt }
-        ];
-        detailKpis.innerHTML = items.map(function (it) {
-          return (
-            '<div class="detail-item">' +
-              '<small>' + it.k + '</small>' +
-              '<strong class="' + (it.cls || '') + '">' + it.v + '</strong>' +
-            '</div>'
-          );
-        }).join('');
-      }
-
-      function setActiveTab(tabKey) {
-        state.adTab = tabKey;
-        tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tabKey); });
-        state.adPage = 1;
-        renderDetailTable();
-      }
-
-      function getDateFilterOk(atText) {
-        const d = new Date(atText.replace(' ', 'T'));
-        if (!adDateStart.value && !adDateEnd.value) return true;
-        const startOk = !adDateStart.value || d >= new Date(adDateStart.value + 'T00:00:00');
-        const endOk = !adDateEnd.value || d <= new Date(adDateEnd.value + 'T23:59:59');
-        return startOk && endOk;
-      }
-
-      function getDetailList() {
-        const key = state.activeUserKey;
-        const tab = state.adTab;
-        const raw = tab === 'orders' ? (orderRecords[key] || []) : (fillRecords[key] || []);
-        return raw.filter(function (row) {
-          const atText = tab === 'orders' ? row.at : row.at;
-          return getDateFilterOk(atText);
-        }).sort(function (a, b) {
-          const ta = new Date((tab === 'orders' ? a.at : a.at).replace(' ', 'T'));
-          const tb = new Date((tab === 'orders' ? b.at : b.at).replace(' ', 'T'));
-          return tb - ta;
-        });
-      }
-
-      function renderDetailTableHead() {
-        if (state.adTab === 'orders') {
-          adThead.innerHTML =
-            '<tr>' +
-              '<th>减仓时间</th>' +
-              '<th>开仓方向</th>' +
-              '<th>减仓数量(USDT)</th>' +
-              '<th>减仓时实时价格</th>' +
-              '<th>订单成交均价</th>' +
-              '<th>减仓盈亏(USDT)</th>' +
-              '<th>减仓后盈利率(%)</th>' +
-              '<th>订单状态</th>' +
-            '</tr>';
-          return;
-        }
-        adThead.innerHTML =
-          '<tr>' +
-            '<th>成交ID</th>' +
-            '<th>订单ID</th>' +
-            '<th>交易对</th>' +
-            '<th>成交时间</th>' +
-            '<th>成交数量(USDT)</th>' +
-            '<th>成交价格</th>' +
-            '<th>成交金额(USDT)</th>' +
-            '<th>手续费(USDT)</th>' +
-            '<th>成交盈亏(USDT)</th>' +
-          '</tr>';
-      }
-
-      function renderDetailTable() {
-        renderDetailTableHead();
-        const list = getDetailList();
-        const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
-        if (state.adPage > totalPages) state.adPage = totalPages;
-        const start = (state.adPage - 1) * pageSize;
-        const pageList = list.slice(start, start + pageSize);
-
-        adSummary.textContent = '当前展示 ' + list.length + ' 条' + (state.adTab === 'orders' ? '订单记录' : '成交记录');
-        adPage.textContent = '第 ' + state.adPage + ' 页 / 共 ' + totalPages + ' 页';
-        adPrev.disabled = state.adPage === 1;
-        adNext.disabled = state.adPage === totalPages;
-
-        if (state.adTab === 'orders') {
-          adTbody.innerHTML = pageList.map(function (row) {
-            const pnlText = (Number(row.pnl) >= 0 ? '+' : '') + fmtNum(row.pnl);
-            return (
-              '<tr>' +
-                '<td>' + row.at + '</td>' +
-                '<td>' + row.side + '</td>' +
-                '<td>' + fmtNum(row.qty) + '</td>' +
-                '<td>' + fmtNum(row.markPrice) + '</td>' +
-                '<td>' + fmtNum(row.avgPrice) + '</td>' +
-                '<td class="text-ok">' + pnlText + '</td>' +
-                '<td>' + String(row.afterProfitRate) + '</td>' +
-                '<td><span class="tag ok">' + row.status + '</span></td>' +
-              '</tr>'
-            );
-          }).join('');
-          return;
-        }
-
-        adTbody.innerHTML = pageList.map(function (row) {
-          const pnl = Number(row.pnl) || 0;
-          const pnlText = (pnl >= 0 ? '+' : '') + fmtNum(pnl);
-          return (
-            '<tr>' +
-              '<td>' + row.fillId + '</td>' +
-              '<td>' + row.orderId + '</td>' +
-              '<td>' + row.pair + '</td>' +
-              '<td>' + row.at + '</td>' +
-              '<td>' + fmtNum(row.qty) + '</td>' +
-              '<td>' + fmtNum(row.price) + '</td>' +
-              '<td>' + fmtNum(row.amount) + '</td>' +
-              '<td>' + fmtNum(row.fee) + '</td>' +
-              '<td class="text-ok">' + pnlText + '</td>' +
-            '</tr>'
-          );
-        }).join('');
-      }
-
-      function openDetail(key, tab) {
-        state.activeUserKey = key;
-        const row = getUserRowByKey(key);
-        renderDetailKpis(row);
-        setActiveTab(tab);
-        activate('adl-detail');
-      }
-
-      function calcRiskRate(maxLoss, futureLoss) {
-        const ml = Number(maxLoss);
-        const fl = Math.abs(Number(futureLoss));
-        if (!Number.isFinite(ml) || ml <= 0 || !Number.isFinite(fl)) return '--';
-        const rate = Math.min(99.99, Math.max(0, (fl / ml) * 100));
-        return fmtNum(rate) + '%';
-      }
-
-      function calcEstProfit(pnl, rate) {
-        const base = Number(pnl) || 0;
-        const r = Number(rate) || 0;
-        const est = Math.max(0, base * (0.35 + (r / 200)));
-        return '+' + fmtNum(est) + ' USDT';
-      }
-
-      function openStatusResult(pair) {
-        const current = pairConfigs.find(function (c) { return c.pair === pair; });
-        if (!current) return;
-        const risk = calcRiskRate(current.maxLongLoss, current.futureLoss);
-        const futureLossAbs = Math.abs(Number(current.futureLoss) || 0);
-        const threshold = Math.max(1, Number(current.maxLongLoss) || 1);
-        const ratio = futureLossAbs / threshold;
-        const resultText = ratio >= 0.75 ? '风险预警' : '正常';
-        srmTitle.textContent = '风险预警结果 - ' + current.pair;
-        srmGrid.innerHTML = [
-          { k: '币对', v: current.pair },
-          { k: '最多多方向可亏损额', v: fmtNum(current.maxLongLoss) + ' USDT' },
-          { k: '用户未来累计亏损额', v: fmtNum(current.futureLoss) + ' USDT' },
-          { k: '风险比率', v: risk },
-          { k: '当前状态', v: resultText },
-          { k: '30天已ADL次数', v: String(current.adlCount) }
-        ].map(function (item) {
-          return '<div class="kpi"><small>' + item.k + '</small><strong>' + item.v + '</strong></div>';
-        }).join('');
-        srmFormula.textContent =
-          '风险比率 = 绝对值(用户未来累计亏损额) ÷ 最多多方向可亏损额\n' +
-          '风险比率 = ' + fmtNum(futureLossAbs) + ' ÷ ' + fmtNum(threshold) + ' = ' + risk + '\n' +
-          '状态判定规则：当风险比率 ≥ 75% 时，状态为风险预警；当风险比率 < 75% 时，状态为正常。\n' +
-          '当前结果：' + resultText;
-        statusResultModal.classList.add('active');
-      }
-
-      function closeStatusResult() {
-        statusResultModal.classList.remove('active');
-      }
-
-      function getPositionByKey(key) {
-        return pairPositions.find(function (item) {
-          return item.pair + '|' + item.userId === key;
-        });
-      }
-
-      function calcBankruptcyPrice(position) {
-        if (!position) return 0;
-        const entry = Number(position.entryPrice) || 0;
-        const leverage = Math.max(1, Number(position.leverage) || 1);
-        if (position.side === '空仓') return entry * (1 + 1 / leverage);
-        return Math.max(0, entry * (1 - 1 / leverage));
-      }
-
-      function calcManualAfterPnl(position, bankruptcyPrice, closeQty) {
-        if (!position) return 0;
-        const entryPrice = Number(position.entryPrice) || 0;
-        const qty = Math.max(0, Number(closeQty) || 0);
-        const bankruptcy = Math.max(0, Number(bankruptcyPrice) || 0);
-        if (entryPrice <= 0 || qty <= 0 || bankruptcy <= 0) return 0;
-        const delta = position.side === '空仓'
-          ? (entryPrice - bankruptcy) / entryPrice
-          : (bankruptcy - entryPrice) / entryPrice;
-        return qty * delta;
-      }
-
-      function refreshManualAfterPnl() {
-        const position = getPositionByKey(state.activeManualKey);
-        const closePnl = calcManualAfterPnl(position, mamBankruptcy.value, mamCloseQty.value);
-        mamAfterPnl.value = fmtSigned(closePnl) + ' USDT';
-      }
-
-      function openManualAdlModal(key) {
-        const position = getPositionByKey(key);
-        if (!position) return;
-        state.activeManualKey = key;
-        mamTitle.textContent = '手动ADL减仓 - ' + position.pair + ' / ' + position.userId;
-        mamBankruptcy.value = fmtNum(calcBankruptcyPrice(position));
-        mamCurrentPrice.value = fmtNum(position.markPrice);
-        mamPositionQty.value = fmtNum(position.valueU);
-        mamPositionSide.value = position.side;
-        mamEntryPrice.value = fmtNum(position.entryPrice);
-        mamCloseQty.value = fmtNum(Math.min((Number(position.valueU) || 0) * 0.2, Number(position.valueU) || 0));
-        mamGoogleCode.value = '';
-        mamError.textContent = '';
-        refreshManualAfterPnl();
-        manualAdlModal.classList.add('active');
-      }
-
-      function closeManualAdlModal() {
-        manualAdlModal.classList.remove('active');
-        state.activeManualKey = '';
-      }
-
-      function saveManualAdl() {
-        const position = getPositionByKey(state.activeManualKey);
-        if (!position) return;
-        const bankruptcyPrice = Number(mamBankruptcy.value || 0);
-        const closeQty = Number(mamCloseQty.value || 0);
-        const totalQty = Number(position.valueU) || 0;
-        const beforePnl = Number(position.upnl) || 0;
-        const remainRatio = totalQty <= 0 ? 0 : Math.max(0, (totalQty - closeQty) / totalQty);
-        const remainPnl = beforePnl * remainRatio;
-        if (!Number.isFinite(closeQty) || closeQty <= 0) {
-          mamError.textContent = '请输入大于 0 的平仓数量。';
-          return;
-        }
-        if (!Number.isFinite(bankruptcyPrice) || bankruptcyPrice <= 0) {
-          mamError.textContent = '请输入大于 0 的破产价。';
-          return;
-        }
-        if (closeQty > totalQty) {
-          mamError.textContent = '平仓数量不能大于当前持仓数量。';
-          return;
-        }
-        if ((mamGoogleCode.value || '').trim() !== manualGoogleDemoCode) {
-          mamError.textContent = '谷歌验证码错误，请输入演示码 624981。';
-          return;
-        }
-
-        const realized = calcManualAfterPnl(position, bankruptcyPrice, closeQty);
-        const reduceRatio = totalQty <= 0 ? 0 : Math.round((closeQty / totalQty) * 100);
-        const riskRate = totalQty <= 0 ? 0 : Math.round((Math.abs(realized) / totalQty) * 100);
-        const doneAt = nowStr();
-        const key = position.pair + '|' + position.userId;
-
-        position.valueU = Math.max(0, totalQty - closeQty);
-        position.upnl = Number(remainPnl.toFixed(2));
-        position.updatedAt = doneAt;
-
-        const userRow = adlUsers.find(function (item) { return item.pair === position.pair && item.userId === position.userId; });
-        if (userRow) {
-          userRow.reduceTimes += 1;
-          userRow.reduceRatio = reduceRatio;
-          userRow.realizedPnl = Number((Number(userRow.realizedPnl || 0) + realized).toFixed(2));
-          userRow.nominalPosition = Number(position.valueU.toFixed(2));
-          userRow.unrealizedPnl = Number(position.upnl.toFixed(2));
-          userRow.walletBalance = Number((Number(userRow.walletBalance || 0) + realized).toFixed(2));
-          userRow.adl30dCount = (Number(userRow.adl30dCount) || 0) + 1;
-          userRow.adl30dAmount = Number(((Number(userRow.adl30dAmount) || 0) + Math.abs(realized)).toFixed(2));
-          userRow.lastAt = doneAt;
-          userRow.profitThreshold = Math.max(userRow.profitThreshold, riskRate);
-        } else {
-          adlUsers.unshift({
-            pair: position.pair,
-            userId: position.userId,
-            account: position.account,
-            profitThreshold: riskRate,
-            reduceRatio: reduceRatio,
-            reduceTimes: 1,
-            realizedPnl: Number(realized.toFixed(2)),
-            lastAt: doneAt,
-            walletBalance: Number(Math.max(1, (totalQty / Math.max(1, Number(position.leverage) || 1)) + realized).toFixed(2)),
-            nominalPosition: Number(position.valueU.toFixed(2)),
-            unrealizedPnl: Number(position.upnl.toFixed(2)),
-            adl30dCount: 1,
-            adl30dAmount: Number(Math.abs(realized).toFixed(2))
-          });
-        }
-
-        if (!orderRecords[key]) orderRecords[key] = [];
-        orderRecords[key].unshift({
-          at: doneAt,
-          side: position.side,
-          qty: Number(closeQty.toFixed(2)),
-          markPrice: Number(bankruptcyPrice.toFixed(2)),
-          avgPrice: Number(position.entryPrice),
-          pnl: Number(realized.toFixed(2)),
-          afterProfitRate: Math.max(0, Math.round((Math.max(0, position.upnl) / Math.max(1, position.valueU || 1)) * 100)),
-          status: '已完成'
-        });
-
-        if (!fillRecords[key]) fillRecords[key] = [];
-        fillRecords[key].unshift({
-          fillId: 'TRD' + doneAt.replace(/[-: ]/g, '') + String(position.userId).slice(-3),
-          orderId: 'ADL' + doneAt.replace(/[-: ]/g, '') + String(position.userId).slice(-3),
-          pair: position.pair,
-          at: doneAt,
-          qty: Number(closeQty.toFixed(2)),
-          price: Number(bankruptcyPrice.toFixed(2)),
-          amount: Number((closeQty * (Number(bankruptcyPrice) || 0)).toFixed(2)),
-          fee: 0,
-          pnl: Number(realized.toFixed(2))
-        });
-
-        const pairConfig = pairConfigs.find(function (item) { return item.pair === position.pair; });
-        if (pairConfig) {
-          pairConfig.adlCount += 1;
-          pairConfig.pnl = Number((Number(pairConfig.pnl || 0) + realized).toFixed(2));
-          pairConfig.status = 'warn';
-        }
-
-        mamError.textContent = '';
-        state.puPage = 1;
-        state.alPage = 1;
-        state.adPage = 1;
-        renderOverview();
-        renderPairConfig();
-        renderPairUsers();
-        renderAdlList();
-        openDetail(key, 'orders');
-        closeManualAdlModal();
-      }
-
-      function openConfigModal(pair) {
-        activeEditPair = pair || '';
-        cmTitle.textContent = activeEditPair ? 'ADL减仓配置' : '新增ADL减仓配置';
-        const current = pairConfigs.find(function (c) { return c.pair === pair; });
-        const initPair = current ? current.pair : (pairUniverse[0] || 'BTC/USDT');
-        const initMaxLoss = current ? current.maxLongLoss : 300000;
-        const initFutureLoss = current ? current.futureLoss : -100000;
-        const initLongBankruptcyOffset = current ? current.longBankruptcyOffset : 5;
-        const initShortBankruptcyOffset = current ? current.shortBankruptcyOffset : 5;
-        const initCycle = current ? current.cycle : 'day';
-        cmPair.value = initPair;
-        cmMaxLoss.value = String(initMaxLoss);
-        cmFutureLoss.value = String(initFutureLoss);
-        cmLongBankruptcyOffset.value = String(initLongBankruptcyOffset);
-        cmShortBankruptcyOffset.value = String(initShortBankruptcyOffset);
-        Array.from(cmCycleGroup.querySelectorAll('input[name="cm-cycle"]')).forEach(function (r) {
-          r.checked = r.value === initCycle;
-        });
-        const risk = calcRiskRate(initMaxLoss, initFutureLoss);
-        cmRiskRate.textContent = risk;
-        const rnum = Number(String(risk).replace('%', ''));
-        cmRiskRate.className = rnum >= 85 ? 'text-danger' : (rnum >= 65 ? 'text-warn' : 'text-ok');
-        const est = calcEstProfit((current ? current.pnl : 14800), rnum);
-        cmEstProfit.textContent = est;
-        activate('config-editor');
-      }
-
-      function closeConfigModal() {
-        activate('pair-config');
-      }
-
-      function getSelectedCycle() {
-        const node = cmCycleGroup.querySelector('input[name="cm-cycle"]:checked');
-        return node ? node.value : 'day';
-      }
-
-      function saveConfig() {
-        const pair = cmPair.value;
-        const maxLoss = Number(cmMaxLoss.value || 0);
-        const futureLoss = Number(cmFutureLoss.value || 0);
-        const longBankruptcyOffset = Number(cmLongBankruptcyOffset.value || 0);
-        const shortBankruptcyOffset = Number(cmShortBankruptcyOffset.value || 0);
-        if (!pair) return;
-        if (!Number.isFinite(maxLoss) || maxLoss <= 0) return;
-        if (!Number.isFinite(futureLoss)) return;
-        if (!Number.isFinite(longBankruptcyOffset) || longBankruptcyOffset < 0) return;
-        if (!Number.isFinite(shortBankruptcyOffset) || shortBankruptcyOffset < 0) return;
-        const cycle = getSelectedCycle();
-        const existing = pairConfigs.find(function (c) { return c.pair === pair; });
-        if (existing) {
-          existing.maxLongLoss = Math.round(maxLoss);
-          existing.futureLoss = Math.round(futureLoss);
-          existing.longBankruptcyOffset = Number(longBankruptcyOffset.toFixed(2));
-          existing.shortBankruptcyOffset = Number(shortBankruptcyOffset.toFixed(2));
-          existing.cycle = cycle;
-          existing.status = Math.abs(existing.futureLoss) / Math.max(1, existing.maxLongLoss) >= 0.75 ? 'warn' : 'ok';
-        } else {
-          pairConfigs.unshift({
-            pair: pair,
-            maxLongLoss: Math.round(maxLoss),
-            futureLoss: Math.round(futureLoss),
-            adlCount: 0,
-            pnl: 0,
-            status: Math.abs(futureLoss) / Math.max(1, maxLoss) >= 0.75 ? 'warn' : 'ok',
-            cycle: cycle,
-            longBankruptcyOffset: Number(longBankruptcyOffset.toFixed(2)),
-            shortBankruptcyOffset: Number(shortBankruptcyOffset.toFixed(2))
-          });
-        }
-        state.pcPage = 1;
-        renderOverview();
-        renderPairConfig();
-        closeConfigModal();
-      }
-
-      navButtons.forEach(function (btn) {
-        btn.addEventListener('click', function () { activate(btn.dataset.page); });
-      });
-      pills.forEach(function (p) {
-        p.addEventListener('click', function () {
-          pills.forEach(function (x) { x.classList.toggle('active', x === p); });
-          state.granularity = p.dataset.gran;
-          renderOverview();
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          activate(button.dataset.page);
         });
       });
+
       specToggle.addEventListener('click', function () {
         setSpecCollapsed(!specSidebar.classList.contains('collapsed'));
       });
 
-      pcApply.addEventListener('click', function () { state.pcPage = 1; renderPairConfig(); });
-      pcReset.addEventListener('click', function () {
-        pcFilterKey.value = '';
-        pcFilterStatus.value = '';
-        state.pcPage = 1;
-        renderPairConfig();
-      });
-      pcPrev.addEventListener('click', function () { if (state.pcPage > 1) { state.pcPage -= 1; renderPairConfig(); } });
-      pcNext.addEventListener('click', function () {
-        const total = Math.max(1, Math.ceil(getPairConfigFiltered().length / pageSize));
-        if (state.pcPage < total) { state.pcPage += 1; renderPairConfig(); }
-      });
-      addConfigBtn.addEventListener('click', function () { openConfigModal(''); });
-
-      puBackConfig.addEventListener('click', function () { activate('pair-config'); });
-      puApply.addEventListener('click', function () { state.puPage = 1; renderPairUsers(); });
-      puReset.addEventListener('click', function () {
-        puFilterPair.value = '';
-        puFilterUser.value = '';
-        puFilterAccount.value = '';
-        state.puPage = 1;
-        renderPairUsers();
-      });
-      puPrev.addEventListener('click', function () { if (state.puPage > 1) { state.puPage -= 1; renderPairUsers(); } });
-      puNext.addEventListener('click', function () {
-        const total = Math.max(1, Math.ceil(getPairUsersFiltered().length / pageSize));
-        if (state.puPage < total) { state.puPage += 1; renderPairUsers(); }
+      configButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          openPolicyModal(button.dataset.risk);
+        });
       });
 
-      alApply.addEventListener('click', function () { state.alPage = 1; renderAdlList(); });
-      alReset.addEventListener('click', function () {
-        alFilterPair.value = '';
-        alFilterUser.value = '';
-        state.alPage = 1;
-        renderAdlList();
+      modalControl.addEventListener('change', updateControlVisibility);
+      modalGoogleBtn.addEventListener('click', function () {
+        modalGoogleCode.value = '624981';
       });
-      alPrev.addEventListener('click', function () { if (state.alPage > 1) { state.alPage -= 1; renderAdlList(); } });
-      alNext.addEventListener('click', function () {
-        const total = Math.max(1, Math.ceil(getAdlListFiltered().length / pageSize));
-        if (state.alPage < total) { state.alPage += 1; renderAdlList(); }
+      modalCancel.addEventListener('click', closePolicyModal);
+      modalConfirm.addEventListener('click', function () {
+        if (!activeRiskKey) {
+          return;
+        }
+        const policy = policyMap[activeRiskKey];
+        let minScore = Number(modalMinScore.value || 0);
+        let maxScore = Number(modalMaxScore.value || 0);
+        if (minScore > maxScore) {
+          const temp = minScore;
+          minScore = maxScore;
+          maxScore = temp;
+        }
+        if (hasRangeOverlap(activeRiskKey, minScore, maxScore)) {
+          modalError.textContent = '当前最低分与最高分区间和其他风险等级存在重叠，不能确认保存。';
+          return;
+        }
+        modalError.textContent = '';
+        policy.minScore = minScore;
+        policy.maxScore = maxScore;
+        policy.control = modalControl.value;
+        policy.discountRate = policy.control === 'discount' ? Number(modalDiscount.value || 0) : (policy.control === 'direct' ? 100 : '');
+        policy.address = policy.control === 'reject' ? '' : modalAddress.value.trim();
+        policy.desc = getControlDesc(activeRiskKey);
+        syncPolicyToPage(activeRiskKey);
+        syncRecordsFromPolicy();
+        renderRecords();
+        closePolicyModal();
+      });
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          closePolicyModal();
+        }
       });
 
-      backToList.addEventListener('click', function () { activate('adl-list'); });
-      tabs.forEach(function (t) {
-        t.addEventListener('click', function () { setActiveTab(t.dataset.tab); });
+      applyBtn.addEventListener('click', function () {
+        currentPage = 1;
+        renderRecords();
       });
-      adApply.addEventListener('click', function () { state.adPage = 1; renderDetailTable(); });
-      adReset.addEventListener('click', function () { adDateStart.value = ''; adDateEnd.value = ''; state.adPage = 1; renderDetailTable(); });
-      adPrev.addEventListener('click', function () { if (state.adPage > 1) { state.adPage -= 1; renderDetailTable(); } });
-      adNext.addEventListener('click', function () {
-        const total = Math.max(1, Math.ceil(getDetailList().length / pageSize));
-        if (state.adPage < total) { state.adPage += 1; renderDetailTable(); }
+      resetBtn.addEventListener('click', function () {
+        filterUser.value = '';
+        filterOrder.value = '';
+        filterRisk.value = '';
+        filterReview.value = '';
+        filterCoin.value = '';
+        filterUpdatedStart.value = '';
+        filterUpdatedEnd.value = '';
+        currentPage = 1;
+        renderRecords();
       });
 
-      cmClose.addEventListener('click', closeConfigModal);
-      cmReset.addEventListener('click', function () { openConfigModal(activeEditPair); });
-      cmSave.addEventListener('click', saveConfig);
-      cmPair.addEventListener('change', function () {
-        const pair = cmPair.value;
-        const current = pairConfigs.find(function (c) { return c.pair === pair; });
-        const maxLoss = current ? current.maxLongLoss : Number(cmMaxLoss.value || 300000);
-        const futureLoss = current ? current.futureLoss : Number(cmFutureLoss.value || -100000);
-        const risk = calcRiskRate(maxLoss, futureLoss);
-        cmRiskRate.textContent = risk;
+      prevPageBtn.addEventListener('click', function () {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          renderRecords();
+        }
       });
-      cmMaxLoss.addEventListener('input', function () { cmRiskRate.textContent = calcRiskRate(cmMaxLoss.value, cmFutureLoss.value); });
-      cmFutureLoss.addEventListener('input', function () { cmRiskRate.textContent = calcRiskRate(cmMaxLoss.value, cmFutureLoss.value); });
 
-      mamClose.addEventListener('click', closeManualAdlModal);
-      mamCancel.addEventListener('click', closeManualAdlModal);
-      manualAdlModal.addEventListener('click', function (e) { if (e.target === manualAdlModal) closeManualAdlModal(); });
-      sdmClose.addEventListener('click', closeScoreDetail);
-      sdmCancel.addEventListener('click', closeScoreDetail);
-      scoreDetailModal.addEventListener('click', function (e) { if (e.target === scoreDetailModal) closeScoreDetail(); });
-      srmClose.addEventListener('click', closeStatusResult);
-      srmCancel.addEventListener('click', closeStatusResult);
-      statusResultModal.addEventListener('click', function (e) { if (e.target === statusResultModal) closeStatusResult(); });
-      mamGoogleFill.addEventListener('click', function () { mamGoogleCode.value = manualGoogleDemoCode; });
-      mamBankruptcy.addEventListener('input', refreshManualAfterPnl);
-      mamCloseQty.addEventListener('input', refreshManualAfterPnl);
-      mamConfirm.addEventListener('click', saveManualAdl);
+      nextPageBtn.addEventListener('click', function () {
+        const totalPages = Math.max(1, Math.ceil(getFilteredRecords().length / pageSize));
+        if (currentPage < totalPages) {
+          currentPage += 1;
+          renderRecords();
+        }
+      });
 
-      renderPairSelect(alFilterPair, true);
-      renderPairSelect(puFilterPair, true);
-      renderPairSelect(cmPair, false);
-      renderOverview();
-      renderPairConfig();
-      renderPairUsers();
-      renderAdlList();
-      openDetail('BTC/USDT|10001', 'orders');
+      recordDetailClose.addEventListener('click', closeRecordDetail);
+      recordReviewForm.addEventListener('change', function (event) {
+        if (event.target && event.target.name === 'review-decision') {
+          recordReviewError.textContent = '';
+          recordReviewDiscountWrap.style.display = event.target.value === 'approve' ? 'flex' : 'none';
+        }
+      });
+      recordReviewGoogleBtn.addEventListener('click', function () {
+        recordReviewGoogleCode.value = '624981';
+        recordReviewError.textContent = '';
+      });
+      recordReviewCancel.addEventListener('click', function () {
+        closeRecordDetail();
+      });
+      recordReviewConfirm.addEventListener('click', function () {
+        recordReviewError.textContent = '';
+        const record = records.find(function (item) { return item.orderNo === activeReviewOrderNo; });
+        if (!record) {
+          recordReviewError.textContent = '未找到对应充值记录。';
+          return;
+        }
+        const decisionNode = recordReviewForm.querySelector('input[name="review-decision"]:checked');
+        const decision = decisionNode ? decisionNode.value : 'approve';
+        const googleCode = (recordReviewGoogleCode.value || '').trim();
+        if (googleCode !== '624981') {
+          recordReviewError.textContent = '请先通过谷歌验证码。';
+          return;
+        }
+        const remark = (recordReviewRemark.value || '').trim();
+        if (decision === 'reject' && !remark) {
+          recordReviewError.textContent = '审核不通过必须填写备注。';
+          return;
+        }
+
+        record.updatedAt = nowStr();
+        if (decision === 'reject') {
+          record.control = 'reject';
+          record.reviewStatus = 'rejected';
+          record.reviewRemark = remark;
+          record.actionText = '拒绝充值入金';
+          record.discountRate = 0;
+          record.settledAmount = 0;
+          record.targetAddress = '--';
+        } else {
+          const rate = Number(recordReviewDiscount.value || record.discountRate || 0);
+          if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+            recordReviewError.textContent = '折扣比例必须为 0 到 100 的数字。';
+            return;
+          }
+          record.control = 'discount';
+          record.reviewStatus = 'approved';
+          record.reviewRemark = remark;
+          record.discountRate = Math.round(rate);
+          record.settledAmount = normalizeAmount(Number(record.sourceAmount) * record.discountRate / 100);
+          record.actionText = '按折扣入金';
+          record.targetAddress = (policyMap[record.riskLevel] && policyMap[record.riskLevel].address) ? policyMap[record.riskLevel].address : '--';
+        }
+
+        renderRecords();
+        openRecordDetail(record);
+      });
+      recordDetailModal.addEventListener('click', function (event) {
+        if (event.target === recordDetailModal) {
+          closeRecordDetail();
+        }
+      });
+
+      Object.keys(policyMap).forEach(syncPolicyToPage);
+      syncRecordsFromPolicy();
       setSpecCollapsed(true);
-      activate('pair-config');
+      renderRecords();
     })();
   </script>
 </body>
